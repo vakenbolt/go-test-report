@@ -12,4 +12,4 @@ WORKDIR /home/dockeruser
 
 ADD . .
 
-ENTRYPOINT  ["./test.sh"]
+RUN npm run test
