@@ -12,4 +12,6 @@ WORKDIR /home/dockeruser
 
 ADD . .
 
+RUN npm fund
+RUN npm install
 RUN npm run test
