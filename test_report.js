@@ -1,39 +1,75 @@
-window.GoTestReport = {
-  init: function (document) {
-    const selectedItems = SelectedItems.constructor()
+/**
+ * @typedef TestStatus
+ * @property {string} TestName
+ * @property {string} Package
+ * @property {number} ElapsedTime
+ * @property {Array.<string>} Output
+ * @property {boolean} Passed
+ */
 
-    document.getElementById('testResults')
-            .addEventListener('click', event => this.testResultsClickHandler(getComputedStyle,
-                                                                             /**@type {HTMLElement}*/ event.target,
+/**
+ * @typedef TestGroupData
+ * @type {object}
+ * @property {string} FailureIndicator
+ * @property {Array.<TestStatus>}
+ */
+
+/**
+ * @typedef TestResults
+ * @type {Array.<TestGroupData>}
+ */
+
+/**
+ * @typedef SelectedItems
+ * @property {HTMLElement|EventTarget} testResults
+ * @property {String} selectedTestGroupColor
+ */
+
+/**
+ * @typedef GoTestReportElements
+ * @property {TestResults} data
+ * @property {HTMLElement} testResultsElem
+ * @property {HTMLElement} testGroupListElem
+ */
+
+
+/**
+ *
+ */
+class GoTestReport {
+  /**
+   * @param {GoTestReportElements} elements
+   */
+  constructor(elements) {
+    const /**@type {SelectedItems}*/ selectedItems = {
+      testResults: null,
+      selectedTestGroupColor: null
+    }
+    elements.testResultsElem
+            .addEventListener('click', event => this.testResultsClickHandler(/**@type {HTMLElement}*/ event.target,
                                                                              event.shiftKey,
-                                                                             data,
+                                                                             elements.data,
                                                                              selectedItems,
                                                                              this.testGroupListHandler));
 
-    document.getElementById('testGroupList')
+    elements.testGroupListElem
             .addEventListener('click', event => this.testGroupListHandler(/**@type {Element}*/ event.target,
-                                                                          data));
-
-    return this
-  },
-
+                                                                          elements.data));
+  }
 
   /**
    *
-   * @param {function(elem: HTMLElement): CSSStyleDeclaration} getComputedStyle
    * @param {HTMLElement} target
    * @param {boolean} shiftKey
    * @param {TestResults} data
    * @param {SelectedItems} selectedItems
    * @param {function(target: Element, data: TestResults)} testGroupListHandler
    */
-  testResultsClickHandler: function (getComputedStyle,
-                                     target,
-                                     shiftKey,
-                                     data,
-                                     selectedItems,
-                                     testGroupListHandler) {
-
+  testResultsClickHandler(target,
+                          shiftKey,
+                          data,
+                          selectedItems,
+                          testGroupListHandler) {
     if (selectedItems.testResults != null) {
       let f = /**@type {HTMLElement}*/ selectedItems.testResults;
       f.style.backgroundColor = selectedItems.selectedTestGroupColor;
@@ -65,15 +101,14 @@ window.GoTestReport = {
     } else if (testResults.length === 1) {
       testGroupListHandler(testGroupListElem.querySelector('.testGroupRow'), data)
     }
-  },
-
+  }
 
   /**
    *
    * @param {Element} target
    * @param {TestResults} data
    */
-  testGroupListHandler: function (target, data) {
+  testGroupListHandler(target, data) {
     const attribs = target['attributes']
     if (attribs.hasOwnProperty('data-testid')) {
       const testId = /**@type {number}*/ attribs['data-testid'].value;
@@ -114,34 +149,4 @@ window.GoTestReport = {
   }
 }
 
-
-/**
- * @typedef TestStatus
- * @property {string} TestName
- * @property {string} Package
- * @property {number} ElapsedTime
- * @property {Array.<string>} Output
- * @property {boolean} Passed
- */
-
-/**
- * @typedef TestGroupData
- * @type {object}
- * @property {string} FailureIndicator
- * @property {Array.<TestStatus>}
- */
-
-/**
- * @typedef TestResults
- * @type {Array.<TestGroupData>}
- */
-
-/**
- * @typedef SelectedItems
- * @property {HTMLElement|EventTarget} testResults
- * @property {String} selectedTestGroupColor
- */
-class SelectedItems {
-  testResults = null;
-  selectedTestGroupColor = null;
-}
+window.GoTestReport = GoTestReport;

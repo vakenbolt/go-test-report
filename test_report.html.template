@@ -211,12 +211,16 @@
 <script type="application/javascript">
     {{.JsCode}}
 
-    window.GoTestReport.init(document)
+    /**
+     * @type {TestResults}
+     */
+    const data = {{.TestResults}}
 
-  /**
-   * @type {TestResults}
-   */
-  const data = {{.TestResults}}
+    const report = new window.GoTestReport({
+                                             data: data,
+                                             testResultsElem: document.getElementById('testResults'),
+                                             testGroupListElem: document.getElementById('testGroupList')
+                                           });
 
 
 </script>

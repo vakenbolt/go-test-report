@@ -14,14 +14,41 @@ const mockData = [{
 }]
 
 
-test('test testGroupListHandler', () => {
+function createTestElements() {
   const testResultsElem = document.createElement('div')
-  testResultsElem.id =  'testResults'
+  testResultsElem.id = 'testResults'
   const testGroupListElem = document.createElement('div')
-  testGroupListElem.id =  'testGroupList'
-  document.body.insertAdjacentElement('beforeend', testResultsElem)
-  document.body.insertAdjacentElement('beforeend', testGroupListElem)
-  const goTestReport = window.GoTestReport.init(document)
+  testGroupListElem.id = 'testGroupList'
+  return {
+    data: mockData,
+    testResultsElem: testResultsElem,
+    testGroupListElem: testGroupListElem
+  }
+}
+
+test('test GoTestReport constructor', () => {
+  const testElements = createTestElements()
+  const goTestReport = new window.GoTestReport(testElements);
+  const invocationCounts = {testResultsClickHandler: 0}
+  goTestReport.testResultsClickHandler = function (target,
+                                                   shiftKey,
+                                                   data,
+                                                   selectedItems,
+                                                   testGroupListHandler) {
+    expect(target).toBe(testElements.testResultsElem)
+    expect(shiftKey).toBe(false)
+    expect(data).toBe(mockData)
+    expect(selectedItems.testResults).toBeNull()
+    expect(selectedItems.selectedTestGroupColor).toBeNull()
+    expect(testGroupListHandler).toBe(goTestReport.testGroupListHandler)
+    invocationCounts.testResultsClickHandler += 1
+  }
+  testElements.testResultsElem.dispatchEvent(new MouseEvent('click'))
+  expect(invocationCounts.testResultsClickHandler).toBe(1)
+});
+
+test('test testGroupListHandler', () => {
+  const goTestReport = new window.GoTestReport(createTestElements());
   const divElem = document.createElement('div')
   const testIdAttr = document.createAttribute('data-testid')
   testIdAttr.value = "0"
