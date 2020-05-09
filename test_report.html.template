@@ -216,11 +216,11 @@
      */
     const data = {{.TestResults}}
 
-    const report = new window.GoTestReport({
-                                             data: data,
-                                             testResultsElem: document.getElementById('testResults'),
-                                             testGroupListElem: document.getElementById('testGroupList')
-                                           });
+    const report = window.GoTestReport({
+                                         data: data,
+                                         testResultsElem: document.getElementById('testResults'),
+                                         testGroupListElem: document.getElementById('testGroupList')
+                                       });
 
 
 </script>
