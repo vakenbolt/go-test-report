@@ -87,7 +87,7 @@ window.GoTestReport = function (elements) {
         const testPassed = /**@type {boolean}*/ testResult.Passed
         const testPassedStatus = /**@type {string}*/ (testPassed) ? '' : 'failed'
         const testId = /**@type {string}*/ target.attributes['id'].value
-        testGroupList += `<div class="testGroupRow ${testPassedStatus}" data-testid="${testId}" data-index="${i}">
+        testGroupList += `<div class="testGroupRow ${testPassedStatus}" data-groupid="${testId}" data-index="${i}">
         <span class="testStatus ${testPassedStatus}">${(testPassed) ? '&check' : '&cross'};</span>
         <span class="testTitle">${testResult.TestName}</span>
         <span class="testDuration"><span>${testResult.ElapsedTime}s </span>⏱</span>
@@ -112,10 +112,10 @@ window.GoTestReport = function (elements) {
      */
     testGroupListHandler: function (target, data) {
       const attribs = target['attributes']
-      if (attribs.hasOwnProperty('data-testid')) {
-        const testId = /**@type {number}*/ attribs['data-testid'].value
-        const index = /**@type {number}*/ attribs['data-index'].value
-        const testStatus = /**@type {TestStatus}*/ data[testId]['TestResults'][index]
+      if (attribs.hasOwnProperty('data-groupid')) {
+        const groupId = /**@type {number}*/ attribs['data-groupid'].value
+        const testIndex = /**@type {number}*/ attribs['data-index'].value
+        const testStatus = /**@type {TestStatus}*/ data[groupId]['TestResults'][testIndex]
         const testOutputDiv = /**@type {HTMLDivElement}*/ target.querySelector('div.testOutput')
 
         if (testOutputDiv == null) {

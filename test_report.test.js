@@ -19,20 +19,31 @@ const mockData = [
     "TestResults": [{
       TestName: "my_sample_test 2",
       Package: "test/package 2",
+      Passed: true,
       Output: [
         "test output B 1\n",
         "test output B 2\n",
         "test output B 3\n",
       ]
-    }]
-  }, {
-    "TestResults": [{
+    }, {
       TestName: "my_sample_test 3",
       Package: "test/package 3",
+      Passed: false,
       Output: [
         "test output C 1\n",
         "test output C 2\n",
         "test output C 3\n",
+      ]
+    }]
+  }, {
+    "TestResults": [{
+      TestName: "my_sample_test 4",
+      Package: "test/package 4",
+      Passed: true,
+      Output: [
+        "test output D 1\n",
+        "test output D 2\n",
+        "test output D 3\n",
       ]
     }]
   }]
@@ -87,31 +98,48 @@ test('test GoTestReport constructor with click event on a test group', () => {
   expect(invocationCounts.testResultsClickHandler).toBe(1)
 })
 
-test('test testGroupListHandler', () => {
-  const goTestReport = new window.GoTestReport(createTestElements());
+
+/**
+ *
+ * @param {number} testGroupId
+ * @param {number} testIndex
+ * @returns {HTMLDivElement}
+ */
+function foobar(testGroupId, testIndex) {
   const divElem = document.createElement('div')
-  const testIdAttr = document.createAttribute('data-testid')
-  testIdAttr.value = "0"
+  const testGroupIdAttr = document.createAttribute('data-groupid')
+  testGroupIdAttr.value = testGroupId.toString()
   const indexAttr = document.createAttribute('data-index')
-  indexAttr.value = "0"
-  divElem.attributes.setNamedItem(testIdAttr)
+  indexAttr.value = testIndex.toString()
+  divElem.attributes.setNamedItem(testGroupIdAttr)
   divElem.attributes.setNamedItem(indexAttr)
+  return divElem
+}
+
+test('test testGroupListHandler using [test group: 0]', () => {
+  const goTestReport = new window.GoTestReport(createTestElements());
+  let divElem = foobar(0, 0)
   goTestReport.testGroupListHandler(divElem, mockData)
   const testOutputDiv = divElem.querySelector('div.testOutput')
-  expect(testOutputDiv).toBeDefined()
-
   const consoleElem = testOutputDiv.querySelector('.console.failed')
-  expect(consoleElem).toBeDefined()
   expect(consoleElem.textContent).toBe('test output A 1\ntest output A 2\ntest output A 3\n')
-
   const testDetailElem = testOutputDiv.querySelector('.testDetail')
-  expect(testDetailElem).toBeDefined()
-
   const packageElem = testDetailElem.querySelector('.package')
-  expect(packageElem).toBeDefined()
   expect(packageElem.innerHTML).toBe(`<strong>Package:</strong> test/package 1`)
-
   const filenameElem = testDetailElem.querySelector('.filename')
-  expect(filenameElem).toBeDefined()
+  expect(filenameElem.innerHTML).toBe(`<strong>Filename:</strong> `)
+})
+
+test('test testGroupListHandler using [test group: 1]', () => {
+  const goTestReport = new window.GoTestReport(createTestElements());
+  let divElem = foobar(2, 0)
+  goTestReport.testGroupListHandler(divElem, mockData)
+  const testOutputDiv = divElem.querySelector('div.testOutput')
+  const consoleElem = testOutputDiv.querySelector('.console')
+  expect(consoleElem.textContent).toBe('test output D 1\ntest output D 2\ntest output D 3\n')
+  const testDetailElem = testOutputDiv.querySelector('.testDetail')
+  const packageElem = testDetailElem.querySelector('.package')
+  expect(packageElem.innerHTML).toBe(`<strong>Package:</strong> test/package 4`)
+  const filenameElem = testDetailElem.querySelector('.filename')
   expect(filenameElem.innerHTML).toBe(`<strong>Filename:</strong> `)
 })
