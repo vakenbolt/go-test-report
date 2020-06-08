@@ -100,12 +100,12 @@ test('test GoTestReport constructor with click event on a test group', () => {
 
 
 /**
- *
+ * Returns an element using the provided testGroupId and testIndex.
  * @param {number} testGroupId
  * @param {number} testIndex
  * @returns {HTMLDivElement}
  */
-function foobar(testGroupId, testIndex) {
+function createDataGroupElement(testGroupId, testIndex) {
   const divElem = document.createElement('div')
   const testGroupIdAttr = document.createAttribute('data-groupid')
   testGroupIdAttr.value = testGroupId.toString()
@@ -118,7 +118,7 @@ function foobar(testGroupId, testIndex) {
 
 test('test testGroupListHandler using [test group: 0]', () => {
   const goTestReport = new window.GoTestReport(createTestElements());
-  let divElem = foobar(0, 0)
+  let divElem = createDataGroupElement(0, 0)
   goTestReport.testGroupListHandler(divElem, mockData)
   const testOutputDiv = divElem.querySelector('div.testOutput')
   const consoleElem = testOutputDiv.querySelector('.console.failed')
@@ -132,7 +132,7 @@ test('test testGroupListHandler using [test group: 0]', () => {
 
 test('test testGroupListHandler using [test group: 1]', () => {
   const goTestReport = new window.GoTestReport(createTestElements());
-  let divElem = foobar(2, 0)
+  let divElem = createDataGroupElement(2, 0)
   goTestReport.testGroupListHandler(divElem, mockData)
   const testOutputDiv = divElem.querySelector('div.testOutput')
   const consoleElem = testOutputDiv.querySelector('.console')

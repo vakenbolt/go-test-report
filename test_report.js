@@ -39,7 +39,7 @@ class GoTestReportElements {}
 
 
 /**
- *
+ * Main entry point for GoTestReport.
  * @param {GoTestReportElements} elements
  * @returns {{testResultsClickHandler: testResultsClickHandler}}
  * @constructor
@@ -60,9 +60,9 @@ window.GoTestReport = function (elements) {
 
   const goTestReport = {
     /**
-     *
-     * @param {HTMLElement} target
-     * @param {boolean} shiftKey
+     * Invoked when a user clicks on one of the test group div elements.
+     * @param {HTMLElement} target The element associated with the test group.
+     * @param {boolean} shiftKey If pressed, all of test detail associated to the test group is shown.
      * @param {TestResults} data
      * @param {SelectedItems} selectedItems
      * @param {function(target: Element, data: TestResults)} testGroupListHandler
@@ -73,8 +73,8 @@ window.GoTestReport = function (elements) {
                                        selectedItems,
                                        testGroupListHandler) {
       if (selectedItems.testResults != null) {
-        let f = /**@type {HTMLElement}*/ selectedItems.testResults
-        f.style.backgroundColor = selectedItems.selectedTestGroupColor
+        let testResultsElement = /**@type {HTMLElement}*/ selectedItems.testResults
+        testResultsElement.style.backgroundColor = selectedItems.selectedTestGroupColor
       }
       const testGroupId = /**@type {number}*/ target.id
       const testResults = /**@type {TestResults}*/ data[testGroupId]['TestResults']
@@ -151,18 +151,21 @@ window.GoTestReport = function (elements) {
     }
   }
 
+  //+------------------------+
+  //|    setup DOM events    |
+  //+------------------------+
   elements.testResultsElem
           .addEventListener('click', event =>
             goTestReport.testResultsClickHandler(/**@type {HTMLElement}*/ addEventData(event).data.target,
-                                           event.shiftKey,
-                                           elements.data,
-                                           selectedItems,
-                                           goTestReport.testGroupListHandler))
+                                                 event.shiftKey,
+                                                 elements.data,
+                                                 selectedItems,
+                                                 goTestReport.testGroupListHandler))
 
   elements.testGroupListElem
           .addEventListener('click', event =>
             goTestReport.testGroupListHandler(/**@type {Element}*/ event.target,
-                                        elements.data))
+                                              elements.data))
 
   return goTestReport
 }
