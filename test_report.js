@@ -77,6 +77,11 @@ window.GoTestReport = function (elements) {
         testResultsElement.style.backgroundColor = selectedItems.selectedTestGroupColor
       }
       const testGroupId = /**@type {number}*/ target.id
+      if ((target.id === undefined)
+        || (data[testGroupId] === undefined)
+        || (data[testGroupId]['TestResults'] === undefined)) {
+        return
+      }
       const testResults = /**@type {TestResults}*/ data[testGroupId]['TestResults']
       let testGroupList = /**@type {string}*/ ''
       selectedItems.selectedTestGroupColor = getComputedStyle(target).getPropertyValue('background-color')
