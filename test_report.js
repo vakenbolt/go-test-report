@@ -72,6 +72,10 @@ window.GoTestReport = function (elements) {
                                        data,
                                        selectedItems,
                                        testGroupListHandler) {
+
+      if (target.classList.contains('testResultGroup') === false) {
+        return
+      }
       if (selectedItems.testResults != null) {
         let testResultsElement = /**@type {HTMLElement}*/ selectedItems.testResults
         testResultsElement.style.backgroundColor = selectedItems.selectedTestGroupColor
