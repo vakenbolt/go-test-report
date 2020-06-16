@@ -10,7 +10,7 @@ go-test-report captures `go test` output and parses it into a _single_ self-cont
 ## Installation
 go-test-report can be installed using [Homebrew](https://brew.sh/)
 
-```shell script
+```shell
 $ brew install go-test-report
 ```
 
@@ -18,13 +18,13 @@ $ brew install go-test-report
 
 To use go-test-report with the default settings. 
 
-```shell script
+```shell
 $ go test -json | go-test-report
 ```
 
 The aforementioned command, outputs an HTML file in the same location. 
 
-```shell script
+```shell
 go-test-report.html
 ```
 
