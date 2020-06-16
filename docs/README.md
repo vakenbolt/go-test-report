@@ -15,6 +15,7 @@ $ brew install go-test-report
 ```
 
 ## Usage
+
 To use go-test-report with the default settings. 
 
 ```shell script
@@ -30,8 +31,5 @@ go-test-report.html
 >Everything needed to display the HTML file correctly is located inside of said file, providing an easy way to store and host the test results.
 
 ## Configuration
+
 Additional configuration options are available via command line flags.
-
-```
-
-```
