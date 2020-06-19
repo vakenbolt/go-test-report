@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/spf13/cobra"
 	"html/template"
 	"io/ioutil"
 	"os"
@@ -42,17 +43,78 @@ type TestGroupData struct {
 	TestResults      []*TestStatus
 }
 
+type cmdFlags struct {
+	titleFlag string
+	sizeFlag  string
+	groupSize int8
+}
+
 func main() {
+	flags := cmdFlags{}
+
+	rootCmd := &cobra.Command{
+		Use:  "go-test-report",
+		Long: "Captures go test output and parses it into a single self-contained html file.",
+		Run:  func(cmd *cobra.Command, args []string) {
+			// start timer
+			// -- do stuff
+			// end timer
+		},
+	}
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Prints the version number of go-test-report",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(fmt.Sprintf("go-test-report v%s", "0.9"))
+		},
+	}
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.PersistentFlags().StringVar(&flags.titleFlag,
+		"title",
+		"go-test-report",
+		"the title text shown in the test report")
+	rootCmd.PersistentFlags().StringVar(&flags.sizeFlag,
+		"size",
+		"24",
+		"the size of the clickable indicator for test result groups")
+	rootCmd.PersistentFlags().Int8Var(&flags.groupSize,
+		"groupSize",
+		0,
+		"the number of tests per test group")
+
+	//TestResultGroupIndicatorWidth
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+}
+
+func foobar() {
+	var err error
 	var allTests = map[string]*TestStatus{}
 
 	// read from stdin and parse "go test" results
 	stdin := os.Stdin
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		panic(err)
+	}
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		fmt.Println("data is being piped to stdin")
+	} else {
+		fmt.Println("show help")
+		os.Exit(0)
+	}
+
 	defer func() {
-		if err := stdin.Close(); err != nil {
+		if err = stdin.Close(); err != nil {
 			panic(err)
 		}
 	}()
 	stdinScanner := bufio.NewScanner(stdin)
+
 	for stdinScanner.Scan() {
 		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
@@ -102,7 +164,7 @@ func main() {
 			panic(err)
 		}
 
-		templateData := TemplateData{
+		tmplData := TemplateData{
 			ReportTitle:                    "go-test-report",
 			TestResultGroupIndicatorWidth:  "24px",
 			TestResultGroupIndicatorHeight: "24px",
@@ -117,15 +179,15 @@ func main() {
 		tgId := 0
 
 		for _, status := range allTests {
-			if len(templateData.TestResults) == tgId {
-				templateData.TestResults = append(templateData.TestResults, &TestGroupData{})
+			if len(tmplData.TestResults) == tgId {
+				tmplData.TestResults = append(tmplData.TestResults, &TestGroupData{})
 			}
-			templateData.TestResults[tgId].TestResults = append(templateData.TestResults[tgId].TestResults, status)
+			tmplData.TestResults[tgId].TestResults = append(tmplData.TestResults[tgId].TestResults, status)
 			if !status.Passed {
-				templateData.TestResults[tgId].FailureIndicator = "failed"
-				templateData.NumOfTestFailed += 1
+				tmplData.TestResults[tgId].FailureIndicator = "failed"
+				tmplData.NumOfTestFailed += 1
 			} else {
-				templateData.NumOfTestPassed += 1
+				tmplData.NumOfTestPassed += 1
 			}
 			tgCounter += 1
 			if tgCounter == numOfTestsPerGroup {
@@ -133,7 +195,7 @@ func main() {
 				tgId += 1
 			}
 		}
-		templateData.NumOfTests = templateData.NumOfTestPassed + templateData.NumOfTestFailed
-		err = tpl.Execute(w, templateData)
+		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
+		err = tpl.Execute(w, tmplData)
 	}
 }
