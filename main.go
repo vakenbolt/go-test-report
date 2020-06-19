@@ -50,22 +50,23 @@ type cmdFlags struct {
 }
 
 func main() {
+	stdin := os.Stdin
 	flags := cmdFlags{}
-
-	rootCmd := &cobra.Command{
-		Use:  "go-test-report",
-		Long: "Captures go test output and parses it into a single self-contained html file.",
-		Run:  func(cmd *cobra.Command, args []string) {
-			// start timer
-			// -- do stuff
-			// end timer
-		},
-	}
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Prints the version number of go-test-report",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(fmt.Sprintf("go-test-report v%s", "0.9"))
+		},
+	}
+	rootCmd := &cobra.Command{
+		Use:  "go-test-report",
+		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
+		Run:  func(cmd *cobra.Command, args []string) {
+			// start timer
+			// -- do stuff
+			foobar(stdin)
+			// end timer
 		},
 	}
 	rootCmd.AddCommand(versionCmd)
@@ -82,21 +83,6 @@ func main() {
 		0,
 		"the number of tests per test group")
 
-	//TestResultGroupIndicatorWidth
-
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-}
-
-func foobar() {
-	var err error
-	var allTests = map[string]*TestStatus{}
-
-	// read from stdin and parse "go test" results
-	stdin := os.Stdin
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		panic(err)
@@ -104,9 +90,26 @@ func foobar() {
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		fmt.Println("data is being piped to stdin")
 	} else {
-		fmt.Println("show help")
-		os.Exit(0)
+		if err := rootCmd.Help(); err != nil {
+			panic(err)
+		}
+		fmt.Println("ERROR: missing ≪ stdin ≫ pipe")
+		os.Exit(1)
 	}
+
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
+
+func foobar(stdin *os.File) {
+	var err error
+	var allTests = map[string]*TestStatus{}
+
+	// read from stdin and parse "go test" results
+
 
 	defer func() {
 		if err = stdin.Close(); err != nil {
