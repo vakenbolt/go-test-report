@@ -49,7 +49,7 @@ func TestTitleFlagIfMissingValue(t *testing.T) {
 func TestSizeFlag(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
-	rootCmd, _, flags := newRootCommand()
+	rootCmd, tmplData, flags := newRootCommand()
 	rootCmd.SetOut(buffer)
 	rootCmd.SetArgs([]string{"--size", "24"})
 	rootCmdErr := rootCmd.Execute()
@@ -57,6 +57,8 @@ func TestSizeFlag(t *testing.T) {
 	output, readErr := ioutil.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal("24", flags.sizeFlag)
+	assertions.Equal("24px", tmplData.TestResultGroupIndicatorWidth)
+	assertions.Equal("24px", tmplData.TestResultGroupIndicatorHeight)
 	assertions.Empty(output)
 }
 
@@ -90,14 +92,14 @@ func TestSizeFlagIfMissingValue(t *testing.T) {
 func TestGroupSizeFlag(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
-	rootCmd, _, flags := newRootCommand()
+	rootCmd, tmplData, _ := newRootCommand()
 	rootCmd.SetOut(buffer)
 	rootCmd.SetArgs([]string{"--groupSize", "32"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Nil(rootCmdErr)
 	output, readErr := ioutil.ReadAll(buffer)
 	assertions.Nil(readErr)
-	assertions.Equal(32, flags.groupSize)
+	assertions.Equal(32, tmplData.numOfTestsPerGroup)
 	assertions.Empty(output)
 }
 

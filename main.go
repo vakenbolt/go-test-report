@@ -42,6 +42,7 @@ type (
 		NumOfTests                     int
 		ReportTitle                    string
 		JsCode                         template.JS
+		numOfTestsPerGroup             int
 	}
 
 	TestGroupData struct {
@@ -126,8 +127,8 @@ func foobar(stdin *os.File) {
 			TestResults:                    []*TestGroupData{},
 			NumOfTests:                     0,
 			JsCode:                         template.JS(jsCode),
+			numOfTestsPerGroup:             20,
 		}
-		numOfTestsPerGroup := 20
 		tgCounter := 0
 		tgId := 0
 
@@ -143,7 +144,7 @@ func foobar(stdin *os.File) {
 				tmplData.NumOfTestPassed += 1
 			}
 			tgCounter += 1
-			if tgCounter == numOfTestsPerGroup {
+			if tgCounter == tmplData.numOfTestsPerGroup {
 				tgCounter = 0
 				tgId += 1
 			}
@@ -211,6 +212,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			if err := parseSizeFlag(tmplData, flags); err != nil {
 				return err
 			}
+			tmplData.numOfTestsPerGroup = flags.groupSize
 			//foobar(stdin)
 			// end timer
 			return nil
