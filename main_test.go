@@ -24,14 +24,14 @@ func TestVersionCommand(t *testing.T) {
 func TestTitleFlag(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
-	rootCmd, _, flags := newRootCommand()
+	rootCmd, tmplData, _ := newRootCommand()
 	rootCmd.SetOut(buffer)
 	rootCmd.SetArgs([]string{"--title", "Sample Test Report"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Nil(rootCmdErr)
 	output, readErr := ioutil.ReadAll(buffer)
 	assertions.Nil(readErr)
-	assertions.Equal("Sample Test Report", flags.titleFlag)
+	assertions.Equal("Sample Test Report", tmplData.ReportTitle)
 	assertions.Empty(output)
 }
 

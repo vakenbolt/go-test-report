@@ -43,6 +43,7 @@ type (
 		ReportTitle                    string
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
+		OutputFilename                 string
 	}
 
 	TestGroupData struct {
@@ -58,7 +59,7 @@ type (
 	}
 )
 
-func foobar(stdin *os.File) {
+func foobar(stdin *os.File, tmplData *TemplateData) {
 	var err error
 	var allTests = map[string]*TestStatus{}
 
@@ -118,17 +119,20 @@ func foobar(stdin *os.File) {
 			panic(err)
 		}
 
-		tmplData := TemplateData{
-			ReportTitle:                    "go-test-report",
-			TestResultGroupIndicatorWidth:  "24px",
-			TestResultGroupIndicatorHeight: "24px",
-			NumOfTestPassed:                0,
-			NumOfTestFailed:                0,
-			TestResults:                    []*TestGroupData{},
-			NumOfTests:                     0,
-			JsCode:                         template.JS(jsCode),
-			numOfTestsPerGroup:             20,
-		}
+		//tmplData := TemplateData{
+		//	ReportTitle:                    "go-test-report",
+		//	TestResultGroupIndicatorWidth:  "24px",
+		//	TestResultGroupIndicatorHeight: "24px",
+		//	NumOfTestPassed:                0,
+		//	NumOfTestFailed:                0,
+		//	TestResults:                    []*TestGroupData{},
+		//	NumOfTests:                     0,
+		//	JsCode:                         template.JS(jsCode),
+		//	numOfTestsPerGroup:             20,
+		//}
+		tmplData.NumOfTestPassed = 0
+		tmplData.NumOfTestFailed = 0
+		tmplData.JsCode = template.JS(jsCode)
 		tgCounter := 0
 		tgId := 0
 
@@ -202,7 +206,9 @@ func checkIfStdinIsPiped(rootCmd *cobra.Command) error {
 
 func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	flags := &cmdFlags{}
-	tmplData := &TemplateData{}
+	tmplData := &TemplateData{
+		OutputFilename: "test_report.html",
+	}
 	rootCmd := &cobra.Command{
 		Use:  "go-test-report",
 		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
@@ -213,6 +219,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 				return err
 			}
 			tmplData.numOfTestsPerGroup = flags.groupSize
+			tmplData.ReportTitle = flags.titleFlag
 			//foobar(stdin)
 			// end timer
 			return nil
