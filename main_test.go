@@ -24,7 +24,7 @@ func TestVersionCommand(t *testing.T) {
 func TestTitleFlag(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
-	rootCmd, flags, _ := newRootCommand()
+	rootCmd, _, flags := newRootCommand()
 	rootCmd.SetOut(buffer)
 	rootCmd.SetArgs([]string{"--title", "Sample Test Report"})
 	rootCmdErr := rootCmd.Execute()
@@ -49,7 +49,7 @@ func TestTitleFlagIfMissingValue(t *testing.T) {
 func TestSizeFlag(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
-	rootCmd, flags, _ := newRootCommand()
+	rootCmd, _, flags := newRootCommand()
 	rootCmd.SetOut(buffer)
 	rootCmd.SetArgs([]string{"--size", "24"})
 	rootCmdErr := rootCmd.Execute()
@@ -63,7 +63,7 @@ func TestSizeFlag(t *testing.T) {
 func TestSizeFlagWithFullDimensions(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
-	rootCmd, flags, tmplData := newRootCommand()
+	rootCmd, tmplData, flags := newRootCommand()
 	rootCmd.SetOut(buffer)
 	rootCmd.SetArgs([]string{"--size", "24x16"})
 	rootCmdErr := rootCmd.Execute()
@@ -85,4 +85,29 @@ func TestSizeFlagIfMissingValue(t *testing.T) {
 	rootCmdErr := rootCmd.Execute()
 	assertions.NotNil(rootCmdErr)
 	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --size`)
+}
+
+func TestGroupSizeFlag(t *testing.T) {
+	assertions := assert.New(t)
+	buffer := bytes.NewBufferString("")
+	rootCmd, _, flags := newRootCommand()
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"--groupSize", "32"})
+	rootCmdErr := rootCmd.Execute()
+	assertions.Nil(rootCmdErr)
+	output, readErr := ioutil.ReadAll(buffer)
+	assertions.Nil(readErr)
+	assertions.Equal(32, flags.groupSize)
+	assertions.Empty(output)
+}
+
+func TestGroupSizeFlagIfMissingValue(t *testing.T) {
+	assertions := assert.New(t)
+	buffer := bytes.NewBufferString("")
+	rootCmd, _, _ := newRootCommand()
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"--groupSize"})
+	rootCmdErr := rootCmd.Execute()
+	assertions.NotNil(rootCmdErr)
+	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --groupSize`)
 }

@@ -183,7 +183,23 @@ func parseSizeFlag(tmplData *TemplateData, flags *cmdFlags) error {
 	}
 }
 
-func newRootCommand() (*cobra.Command, *cmdFlags, *TemplateData) {
+func checkIfStdinIsPiped(rootCmd *cobra.Command) error {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return err
+	}
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		fmt.Println("data is being piped to stdin")
+	} else {
+		if err := rootCmd.Help(); err != nil {
+			return err
+		}
+		return errors.New("ERROR: missing ≪ stdin ≫ pipe")
+	}
+	return nil
+}
+
+func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	flags := &cmdFlags{}
 	tmplData := &TemplateData{}
 	rootCmd := &cobra.Command{
@@ -230,26 +246,17 @@ func newRootCommand() (*cobra.Command, *cmdFlags, *TemplateData) {
 		"test_report.html",
 		"the HTML output file")
 
-	return rootCmd, flags, tmplData
+	return rootCmd, tmplData, flags
 }
 
 func main() {
 	rootCmd, _, _ := newRootCommand()
-	stat, err := os.Stdin.Stat()
-	if err != nil {
-		panic(err)
-	}
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		fmt.Println("data is being piped to stdin")
-	} else {
-		if err := rootCmd.Help(); err != nil {
-			panic(err)
-		}
-		fmt.Println("ERROR: missing ≪ stdin ≫ pipe")
+	if err := checkIfStdinIsPiped(rootCmd); err != nil {
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
