@@ -3,12 +3,17 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"html/template"
 	"io/ioutil"
 	"os"
+	"strconv"
+	"strings"
 )
+
+var version = "0.9"
 
 type (
 	goTestOutputRow struct {
@@ -50,11 +55,6 @@ type (
 		groupSize  int8
 		outputFlag string
 	}
-)
-
-var (
-	stdin = os.Stdin
-	version = "0.9"
 )
 
 func foobar(stdin *os.File) {
@@ -153,26 +153,62 @@ func foobar(stdin *os.File) {
 	}
 }
 
-func newRootCommand() (*cobra.Command, *cmdFlags) {
+func parseSizeFlag(tmplData *TemplateData, flags *cmdFlags) error {
+	flags.sizeFlag = strings.ToLower(flags.sizeFlag)
+	if !strings.Contains(flags.sizeFlag, "x") {
+		if val, err := strconv.Atoi(flags.sizeFlag); err != nil {
+			return err
+		} else {
+			tmplData.TestResultGroupIndicatorWidth = fmt.Sprintf("%dpx", val)
+			tmplData.TestResultGroupIndicatorHeight = fmt.Sprintf("%dpx", val)
+			return nil
+		}
+	}
+	if strings.Count(flags.sizeFlag, "x") > 1 {
+		return errors.New(`malformed size value; only one x is allowed if specifying with and height`)
+	} else {
+		a := strings.Split(flags.sizeFlag, "x")
+		if val, err := strconv.Atoi(a[0]); err != nil {
+			return err
+		} else {
+			tmplData.TestResultGroupIndicatorWidth = fmt.Sprintf("%dpx", val)
+
+		}
+		if val, err := strconv.Atoi(a[1]); err != nil {
+			return err
+		} else {
+			tmplData.TestResultGroupIndicatorHeight = fmt.Sprintf("%dpx", val)
+		}
+		return nil
+	}
+}
+
+func newRootCommand() (*cobra.Command, *cmdFlags, *TemplateData) {
 	flags := &cmdFlags{}
+	tmplData := &TemplateData{}
 	rootCmd := &cobra.Command{
 		Use:  "go-test-report",
 		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			// start timer
 			// -- do stuff
-			foobar(stdin)
+			if err := parseSizeFlag(tmplData, flags); err != nil {
+				return err
+			}
+			//foobar(stdin)
 			// end timer
+			return nil
 		},
 	}
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "Prints the version number of go-test-report",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			msg := fmt.Sprintf("go-test-report v%s", version)
 			if _, err := fmt.Fprintln(cmd.OutOrStdout(), msg); err != nil {
-				panic(err)
+				return err
 			}
+			return nil
 		},
 	}
 	rootCmd.AddCommand(versionCmd)
@@ -194,11 +230,11 @@ func newRootCommand() (*cobra.Command, *cmdFlags) {
 		"test_report.html",
 		"the HTML output file")
 
-	return rootCmd, flags
+	return rootCmd, flags, tmplData
 }
 
 func main() {
-	rootCmd, _ := newRootCommand()
+	rootCmd, _, _ := newRootCommand()
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		panic(err)
