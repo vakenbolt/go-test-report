@@ -21,7 +21,7 @@ func TestVersionCommand(t *testing.T) {
 	assertions.Equal(fmt.Sprintf("go-test-report v%s\n", version), string(output))
 }
 
-func TestVersionHelp(t *testing.T) {
+func TestTitleFlag(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
 	rootCmd, flags := newRootCommand()
@@ -33,6 +33,17 @@ func TestVersionHelp(t *testing.T) {
 	assertions.Nil(readErr)
 	assertions.Equal("Sample Test Report", flags.titleFlag)
 	assertions.Empty(output)
+}
+
+func TestTitleFlagIfMissingValue(t *testing.T) {
+	assertions := assert.New(t)
+	buffer := bytes.NewBufferString("")
+	rootCmd, _ := newRootCommand()
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"--title"})
+	rootCmdErr := rootCmd.Execute()
+	assertions.NotNil(rootCmdErr)
+	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --title`)
 }
 
 /*

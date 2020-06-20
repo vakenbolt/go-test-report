@@ -15,3 +15,4 @@ ADD . .
 RUN npm install
 RUN npm fund
 RUN npm run test
+RUN go test -v
