@@ -10,99 +10,52 @@ import (
 	"os"
 )
 
-type goTestOutputRow struct {
-	Time     string
-	TestName string `json:"Test"`
-	Action   string
-	Package  string
-	Elapsed  float64
-	Output   string
-}
-
-type TestStatus struct {
-	TestName    string
-	Package     string
-	ElapsedTime float64
-	Output      []string
-	Passed      bool
-}
-
-type TemplateData struct {
-	TestResultGroupIndicatorWidth  string
-	TestResultGroupIndicatorHeight string
-	TestResults                    []*TestGroupData
-	NumOfTestPassed                int
-	NumOfTestFailed                int
-	NumOfTests                     int
-	ReportTitle                    string
-	JsCode                         template.JS
-}
-
-type TestGroupData struct {
-	FailureIndicator string
-	TestResults      []*TestStatus
-}
-
-type cmdFlags struct {
-	titleFlag string
-	sizeFlag  string
-	groupSize int8
-}
-
-func main() {
-	stdin := os.Stdin
-	flags := cmdFlags{}
-	versionCmd := &cobra.Command{
-		Use:   "version",
-		Short: "Prints the version number of go-test-report",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println(fmt.Sprintf("go-test-report v%s", "0.9"))
-		},
-	}
-	rootCmd := &cobra.Command{
-		Use:  "go-test-report",
-		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
-		Run:  func(cmd *cobra.Command, args []string) {
-			// start timer
-			// -- do stuff
-			foobar(stdin)
-			// end timer
-		},
-	}
-	rootCmd.AddCommand(versionCmd)
-	rootCmd.PersistentFlags().StringVar(&flags.titleFlag,
-		"title",
-		"go-test-report",
-		"the title text shown in the test report")
-	rootCmd.PersistentFlags().StringVar(&flags.sizeFlag,
-		"size",
-		"24",
-		"the size of the clickable indicator for test result groups")
-	rootCmd.PersistentFlags().Int8Var(&flags.groupSize,
-		"groupSize",
-		0,
-		"the number of tests per test group")
-
-	stat, err := os.Stdin.Stat()
-	if err != nil {
-		panic(err)
-	}
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		fmt.Println("data is being piped to stdin")
-	} else {
-		if err := rootCmd.Help(); err != nil {
-			panic(err)
-		}
-		fmt.Println("ERROR: missing ≪ stdin ≫ pipe")
-		os.Exit(1)
+type (
+	goTestOutputRow struct {
+		Time     string
+		TestName string `json:"Test"`
+		Action   string
+		Package  string
+		Elapsed  float64
+		Output   string
 	}
 
-
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	TestStatus struct {
+		TestName    string
+		Package     string
+		ElapsedTime float64
+		Output      []string
+		Passed      bool
 	}
-}
+
+	TemplateData struct {
+		TestResultGroupIndicatorWidth  string
+		TestResultGroupIndicatorHeight string
+		TestResults                    []*TestGroupData
+		NumOfTestPassed                int
+		NumOfTestFailed                int
+		NumOfTests                     int
+		ReportTitle                    string
+		JsCode                         template.JS
+	}
+
+	TestGroupData struct {
+		FailureIndicator string
+		TestResults      []*TestStatus
+	}
+
+	cmdFlags struct {
+		titleFlag  string
+		sizeFlag   string
+		groupSize  int8
+		outputFlag string
+	}
+)
+
+var (
+	stdin = os.Stdin
+	version = "0.9"
+)
 
 func foobar(stdin *os.File) {
 	var err error
@@ -110,14 +63,12 @@ func foobar(stdin *os.File) {
 
 	// read from stdin and parse "go test" results
 
-
 	defer func() {
 		if err = stdin.Close(); err != nil {
 			panic(err)
 		}
 	}()
 	stdinScanner := bufio.NewScanner(stdin)
-
 	for stdinScanner.Scan() {
 		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
@@ -146,7 +97,6 @@ func foobar(stdin *os.File) {
 			testStatus.Output = append(testStatus.Output, goTestOutputRow.Output)
 		}
 	}
-
 	if tpl, err := template.ParseFiles("test_report.html.template"); err != nil {
 		panic(err)
 	} else {
@@ -200,5 +150,70 @@ func foobar(stdin *os.File) {
 		}
 		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
 		err = tpl.Execute(w, tmplData)
+	}
+}
+
+func newRootCommand() (*cobra.Command, *cmdFlags) {
+	flags := &cmdFlags{}
+	rootCmd := &cobra.Command{
+		Use:  "go-test-report",
+		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
+		Run: func(cmd *cobra.Command, args []string) {
+			// start timer
+			// -- do stuff
+			foobar(stdin)
+			// end timer
+		},
+	}
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Prints the version number of go-test-report",
+		Run: func(cmd *cobra.Command, args []string) {
+			msg := fmt.Sprintf("go-test-report v%s", version)
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), msg); err != nil {
+				panic(err)
+			}
+		},
+	}
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.PersistentFlags().StringVar(&flags.titleFlag,
+		"title",
+		"go-test-report",
+		"the title text shown in the test report")
+	rootCmd.PersistentFlags().StringVar(&flags.sizeFlag,
+		"size",
+		"24",
+		"the size of the clickable indicator for test result groups")
+	rootCmd.PersistentFlags().Int8Var(&flags.groupSize,
+		"groupSize",
+		0,
+		"the number of tests per test group")
+	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
+		"output",
+		"o",
+		"test_report.html",
+		"the HTML output file")
+
+	return rootCmd, flags
+}
+
+func main() {
+	rootCmd, _ := newRootCommand()
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		panic(err)
+	}
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		fmt.Println("data is being piped to stdin")
+	} else {
+		if err := rootCmd.Help(); err != nil {
+			panic(err)
+		}
+		fmt.Println("ERROR: missing ≪ stdin ≫ pipe")
+		os.Exit(1)
+	}
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }
