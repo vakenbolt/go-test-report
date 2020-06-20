@@ -1,4 +1,8 @@
-FROM alpine
+#FROM alpine
+FROM golang:1.14-alpine
+
+# installs GCC, libc-dev, etc
+RUN apk add build-base
 
 # makes working with alpine-linux a little easier
 RUN apk add --no-cache shadow

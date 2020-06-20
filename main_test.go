@@ -76,15 +76,13 @@ func TestSizeFlagWithFullDimensions(t *testing.T) {
 	assertions.Empty(output)
 }
 
-/*
 func TestSizeFlagIfMissingValue(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
-	rootCmd, _ := newRootCommand()
+	rootCmd, _, _ := newRootCommand()
 	rootCmd.SetOut(buffer)
-	rootCmd.SetArgs([]string{"--title"})
+	rootCmd.SetArgs([]string{"--size"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.NotNil(rootCmdErr)
-	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --title`)
+	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --size`)
 }
-*/
