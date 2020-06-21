@@ -236,8 +236,9 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 		},
 	}
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.PersistentFlags().StringVar(&flags.titleFlag,
+	rootCmd.PersistentFlags().StringVarP(&flags.titleFlag,
 		"title",
+		"t",
 		"go-test-report",
 		"the title text shown in the test report")
 	rootCmd.PersistentFlags().StringVar(&flags.sizeFlag,
