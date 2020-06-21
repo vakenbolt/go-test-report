@@ -59,7 +59,7 @@ type (
 	}
 )
 
-func foobar(tmplData *TemplateData, cmd *cobra.Command) error {
+func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 	stdin := os.Stdin
 	if err := checkIfStdinIsPiped(cmd); err != nil {
 		//fmt.Println(err.Error())
@@ -226,11 +226,9 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
-
-			//foobarStatus := foobar(tmplData, cmd)
-			_ = foobar(tmplData, cmd)
-
-			//foobar(stdin)
+			if err := generateTestReport(tmplData, cmd); err != nil {
+				return err
+			}
 			// end timer
 			return nil
 		},
