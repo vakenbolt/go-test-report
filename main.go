@@ -241,8 +241,9 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 		"t",
 		"go-test-report",
 		"the title text shown in the test report")
-	rootCmd.PersistentFlags().StringVar(&flags.sizeFlag,
+	rootCmd.PersistentFlags().StringVarP(&flags.sizeFlag,
 		"size",
+		"s",
 		"24",
 		"the size of the clickable indicator for test result groups")
 	rootCmd.PersistentFlags().IntVar(&flags.groupSize,

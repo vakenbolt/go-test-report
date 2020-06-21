@@ -35,20 +35,6 @@ func TestTitleFlag(t *testing.T) {
 	assertions.Empty(output)
 }
 
-func TestTitleShorthandFlag(t *testing.T) {
-	assertions := assert.New(t)
-	buffer := bytes.NewBufferString("")
-	rootCmd, tmplData, _ := newRootCommand()
-	rootCmd.SetOut(buffer)
-	rootCmd.SetArgs([]string{"-t", "Sample Test Report 2"})
-	rootCmdErr := rootCmd.Execute()
-	assertions.Nil(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
-	assertions.Nil(readErr)
-	assertions.Equal("Sample Test Report 2", tmplData.ReportTitle)
-	assertions.Empty(output)
-}
-
 func TestTitleFlagIfMissingValue(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
@@ -58,17 +44,6 @@ func TestTitleFlagIfMissingValue(t *testing.T) {
 	rootCmdErr := rootCmd.Execute()
 	assertions.NotNil(rootCmdErr)
 	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --title`)
-}
-
-func TestTitleShorthandFlagIfMissingValue(t *testing.T) {
-	assertions := assert.New(t)
-	buffer := bytes.NewBufferString("")
-	rootCmd, _, _ := newRootCommand()
-	rootCmd.SetOut(buffer)
-	rootCmd.SetArgs([]string{"-t"})
-	rootCmdErr := rootCmd.Execute()
-	assertions.NotNil(rootCmdErr)
-	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: 't' in -t`)
 }
 
 func TestSizeFlag(t *testing.T) {
@@ -153,20 +128,6 @@ func TestGroupOutputFlag(t *testing.T) {
 	assertions.Empty(output)
 }
 
-func TestGroupOutputShorthandFlag(t *testing.T) {
-	assertions := assert.New(t)
-	buffer := bytes.NewBufferString("")
-	rootCmd, tmplData, _ := newRootCommand()
-	rootCmd.SetOut(buffer)
-	rootCmd.SetArgs([]string{"-o", "test_file_shorthand.html"})
-	rootCmdErr := rootCmd.Execute()
-	assertions.Nil(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
-	assertions.Nil(readErr)
-	assertions.Equal("test_file_shorthand.html", tmplData.OutputFilename)
-	assertions.Empty(output)
-}
-
 func TestGroupOutputFlagIfMissingValue(t *testing.T) {
 	assertions := assert.New(t)
 	buffer := bytes.NewBufferString("")
@@ -176,15 +137,4 @@ func TestGroupOutputFlagIfMissingValue(t *testing.T) {
 	rootCmdErr := rootCmd.Execute()
 	assertions.NotNil(rootCmdErr)
 	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --output`)
-}
-
-func TestGroupOutputShorthandFlagIfMissingValue(t *testing.T) {
-	assertions := assert.New(t)
-	buffer := bytes.NewBufferString("")
-	rootCmd, _, _ := newRootCommand()
-	rootCmd.SetOut(buffer)
-	rootCmd.SetArgs([]string{"-o"})
-	rootCmdErr := rootCmd.Execute()
-	assertions.NotNil(rootCmdErr)
-	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: 'o' in -o`)
 }
