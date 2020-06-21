@@ -59,7 +59,12 @@ type (
 	}
 )
 
-func foobar(stdin *os.File, tmplData *TemplateData) {
+func foobar(stdin *os.File, tmplData *TemplateData, cmd *cobra.Command) {
+	if err := checkIfStdinIsPiped(cmd); err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	var err error
 	var allTests = map[string]*TestStatus{}
 
@@ -261,10 +266,6 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 
 func main() {
 	rootCmd, _, _ := newRootCommand()
-	if err := checkIfStdinIsPiped(rootCmd); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
