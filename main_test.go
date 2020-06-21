@@ -113,3 +113,53 @@ func TestGroupSizeFlagIfMissingValue(t *testing.T) {
 	assertions.NotNil(rootCmdErr)
 	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --groupSize`)
 }
+
+func TestGroupOutputFlag(t *testing.T) {
+	assertions := assert.New(t)
+	buffer := bytes.NewBufferString("")
+	rootCmd, tmplData, _ := newRootCommand()
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"--output", "test_file.html"})
+	rootCmdErr := rootCmd.Execute()
+	assertions.Nil(rootCmdErr)
+	output, readErr := ioutil.ReadAll(buffer)
+	assertions.Nil(readErr)
+	assertions.Equal("test_file.html", tmplData.OutputFilename)
+	assertions.Empty(output)
+}
+
+func TestGroupOutputShorthandFlag(t *testing.T) {
+	assertions := assert.New(t)
+	buffer := bytes.NewBufferString("")
+	rootCmd, tmplData, _ := newRootCommand()
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"-o", "test_file_shorthand.html"})
+	rootCmdErr := rootCmd.Execute()
+	assertions.Nil(rootCmdErr)
+	output, readErr := ioutil.ReadAll(buffer)
+	assertions.Nil(readErr)
+	assertions.Equal("test_file_shorthand.html", tmplData.OutputFilename)
+	assertions.Empty(output)
+}
+
+func TestGroupOutputFlagIfMissingValue(t *testing.T) {
+	assertions := assert.New(t)
+	buffer := bytes.NewBufferString("")
+	rootCmd, _, _ := newRootCommand()
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"--output"})
+	rootCmdErr := rootCmd.Execute()
+	assertions.NotNil(rootCmdErr)
+	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --output`)
+}
+
+func TestGroupOutputShorthandFlagIfMissingValue(t *testing.T) {
+	assertions := assert.New(t)
+	buffer := bytes.NewBufferString("")
+	rootCmd, _, _ := newRootCommand()
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"-o"})
+	rootCmdErr := rootCmd.Execute()
+	assertions.NotNil(rootCmdErr)
+	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: 'o' in -o`)
+}

@@ -102,7 +102,7 @@ func foobar(stdin *os.File, tmplData *TemplateData) {
 	if tpl, err := template.ParseFiles("test_report.html.template"); err != nil {
 		panic(err)
 	} else {
-		testReportHTMLTemplateFile, _ := os.Create("test_report.html")
+		testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
 		w := bufio.NewWriter(testReportHTMLTemplateFile)
 		defer func() {
 			if err := w.Flush(); err != nil {
@@ -206,9 +206,7 @@ func checkIfStdinIsPiped(rootCmd *cobra.Command) error {
 
 func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	flags := &cmdFlags{}
-	tmplData := &TemplateData{
-		OutputFilename: "test_report.html",
-	}
+	tmplData := &TemplateData{}
 	rootCmd := &cobra.Command{
 		Use:  "go-test-report",
 		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
@@ -220,6 +218,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			}
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.ReportTitle = flags.titleFlag
+			tmplData.OutputFilename = flags.outputFlag
 			//foobar(stdin)
 			// end timer
 			return nil
