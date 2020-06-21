@@ -32,7 +32,7 @@ func TestTitleFlag(t *testing.T) {
 	output, readErr := ioutil.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal("Sample Test Report", tmplData.ReportTitle)
-	assertions.Empty(output)
+	assertions.NotEmpty(output)
 }
 
 func TestTitleFlagIfMissingValue(t *testing.T) {
@@ -59,7 +59,7 @@ func TestSizeFlag(t *testing.T) {
 	assertions.Equal("24", flags.sizeFlag)
 	assertions.Equal("24px", tmplData.TestResultGroupIndicatorWidth)
 	assertions.Equal("24px", tmplData.TestResultGroupIndicatorHeight)
-	assertions.Empty(output)
+	assertions.NotEmpty(output)
 }
 
 func TestSizeFlagWithFullDimensions(t *testing.T) {
@@ -75,7 +75,7 @@ func TestSizeFlagWithFullDimensions(t *testing.T) {
 	assertions.Equal("24x16", flags.sizeFlag)
 	assertions.Equal("24px", tmplData.TestResultGroupIndicatorWidth)
 	assertions.Equal("16px", tmplData.TestResultGroupIndicatorHeight)
-	assertions.Empty(output)
+	assertions.NotEmpty(output)
 }
 
 func TestSizeFlagIfMissingValue(t *testing.T) {
@@ -100,7 +100,7 @@ func TestGroupSizeFlag(t *testing.T) {
 	output, readErr := ioutil.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal(32, tmplData.numOfTestsPerGroup)
-	assertions.Empty(output)
+	assertions.NotEmpty(output)
 }
 
 func TestGroupSizeFlagIfMissingValue(t *testing.T) {
@@ -125,7 +125,7 @@ func TestGroupOutputFlag(t *testing.T) {
 	output, readErr := ioutil.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal("test_file.html", tmplData.OutputFilename)
-	assertions.Empty(output)
+	assertions.NotEmpty(output)
 }
 
 func TestGroupOutputFlagIfMissingValue(t *testing.T) {

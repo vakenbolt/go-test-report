@@ -59,10 +59,12 @@ type (
 	}
 )
 
-func foobar(stdin *os.File, tmplData *TemplateData, cmd *cobra.Command) {
+func foobar(tmplData *TemplateData, cmd *cobra.Command) error {
+	stdin := os.Stdin
 	if err := checkIfStdinIsPiped(cmd); err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		//fmt.Println(err.Error())
+		//os.Exit(1)
+		return err
 	}
 
 	var err error
@@ -105,7 +107,7 @@ func foobar(stdin *os.File, tmplData *TemplateData, cmd *cobra.Command) {
 		}
 	}
 	if tpl, err := template.ParseFiles("test_report.html.template"); err != nil {
-		panic(err)
+		return err
 	} else {
 		testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
 		w := bufio.NewWriter(testReportHTMLTemplateFile)
@@ -121,7 +123,7 @@ func foobar(stdin *os.File, tmplData *TemplateData, cmd *cobra.Command) {
 		// read Javascript test code
 		jsCode, err := ioutil.ReadFile("test_report.js")
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		//tmplData := TemplateData{
@@ -161,6 +163,7 @@ func foobar(stdin *os.File, tmplData *TemplateData, cmd *cobra.Command) {
 		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
 		err = tpl.Execute(w, tmplData)
 	}
+	return nil
 }
 
 func parseSizeFlag(tmplData *TemplateData, flags *cmdFlags) error {
@@ -199,14 +202,13 @@ func checkIfStdinIsPiped(rootCmd *cobra.Command) error {
 		return err
 	}
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		fmt.Println("data is being piped to stdin")
+		return nil
 	} else {
 		if err := rootCmd.Help(); err != nil {
 			return err
 		}
 		return errors.New("ERROR: missing ≪ stdin ≫ pipe")
 	}
-	return nil
 }
 
 func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
@@ -224,6 +226,10 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
+
+			//foobarStatus := foobar(tmplData, cmd)
+			_ = foobar(tmplData, cmd)
+
 			//foobar(stdin)
 			// end timer
 			return nil
