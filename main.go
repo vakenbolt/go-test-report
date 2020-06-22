@@ -255,8 +255,9 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 		"s",
 		"24",
 		"the size of the clickable indicator for test result groups")
-	rootCmd.PersistentFlags().IntVar(&flags.groupSize,
+	rootCmd.PersistentFlags().IntVarP(&flags.groupSize,
 		"groupSize",
+		"g",
 		10,
 		"the number of tests per test group indicator")
 	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
