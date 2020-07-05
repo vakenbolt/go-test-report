@@ -2,13 +2,20 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"html/template"
+	"io"
 	"io/ioutil"
+	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -269,10 +276,146 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	return rootCmd, tmplData, flags
 }
 
+func pipeEchoCmdToShellCmd(echoCmd *exec.Cmd, shellCmd *exec.Cmd) {
+	var err error
+	rPipe, wPipe := io.Pipe()
+	echoCmd.Stdout = wPipe
+	shellCmd.Stdin = rPipe
+	stdoutPipe, err := shellCmd.StdoutPipe()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	stderrPipe, err := shellCmd.StderrPipe()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	errorCheck(echoCmd.Start())
+	errorCheck(shellCmd.Start())
+	errorCheck(echoCmd.Wait())
+	errorCheck(wPipe.Close())
+	scanStdOutErrWithPipeToConsole(&stdoutPipe, &stderrPipe, true)
+	errorCheck(shellCmd.Wait())
+}
+
+func scanStdOutErrWithPipeToConsole(stdout *io.ReadCloser, stderr *io.ReadCloser, useColor bool) {
+	stdoutScanner := bufio.NewScanner(*stdout)
+	stdoutScanner.Split(bufio.ScanLines)
+	for stdoutScanner.Scan() {
+		m := stdoutScanner.Text()
+		fmt.Println(m)
+	}
+	stderrScanner := bufio.NewScanner(*stderr)
+	stderrScanner.Split(bufio.ScanLines)
+	for stderrScanner.Scan() {
+		fmt.Println(stderrScanner.Text())
+	}
+}
+
+func errorCheck(err error) {
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+type (
+	GoListJsonModule struct {
+		Path string
+		Dir  string
+		Main bool
+	}
+
+	GoListJson struct {
+		Dir         string
+		ImportPath  string
+		Name        string
+		GoFiles     []string
+		TestGoFiles []string
+		Module      GoListJsonModule
+	}
+)
+
+type FunctionDetail struct {
+	FunctionName string
+	Line         int
+	Col          int
+}
+type TestFileDetail struct {
+	FileName  string
+	Functions []FunctionDetail
+}
+
+func getPackageDetails(paths []string) error {
+	var out bytes.Buffer
+	paths = append([]string{"list"}, paths...)
+	cmd := exec.Command("go", paths...)
+	cmd.Stdin = strings.NewReader("")
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
+	goListOutput := strings.Split(strings.TrimSpace(out.String()), "\n")
+	for _, packageName := range goListOutput {
+		cmd = exec.Command("go", "list", "-json", packageName)
+		out.Reset()
+		cmd.Stdin = strings.NewReader("")
+		cmd.Stdout = &out
+		err := cmd.Run()
+		if err != nil {
+			log.Fatal(err)
+		}
+		goListJson := &GoListJson{}
+		if err := json.Unmarshal(out.Bytes(), goListJson); err != nil {
+			return err
+		}
+		testFileDetails := map[string]TestFileDetail{}
+		for _, file := range goListJson.TestGoFiles {
+			sourceFilePath := fmt.Sprintf("%s/%s", goListJson.Dir, file)
+			fileSet := token.NewFileSet()
+			f, err := parser.ParseFile(fileSet, sourceFilePath, nil, 0)
+			if err != nil {
+				return err
+			}
+			testFileDetail := TestFileDetail{}
+			ast.Inspect(f, func(n ast.Node) bool {
+				switch x := n.(type) {
+				case *ast.FuncDecl:
+					fileSetPos := fileSet.Position(n.Pos())
+					folders := strings.Split(fileSetPos.String(), "/")
+					fileNameWithPos := folders[len(folders)-1]
+					fileDetails := strings.Split(fileNameWithPos, ":")
+					lineNum, _ := strconv.Atoi(fileDetails[1])
+					colNum, _ := strconv.Atoi(fileDetails[2])
+					testFileDetail.FileName = fileDetails[0]
+					testFileDetail.Functions = append(testFileDetail.Functions, FunctionDetail{
+						FunctionName: x.Name.Name,
+						Line:         lineNum,
+						Col:          colNum,
+					})
+					testFileDetails[sourceFilePath] = testFileDetail
+				}
+				return true
+			})
+			o, _ := json.Marshal(testFileDetails)
+			fmt.Println(string(o))
+		}
+	}
+	return nil
+}
+
 func main() {
 	rootCmd, _, _ := newRootCommand()
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	/*
+		if err := getPackageDetails([]string{"./..."}); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	 */
 }
