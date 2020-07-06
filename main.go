@@ -32,12 +32,13 @@ type (
 	}
 
 	TestStatus struct {
-		TestName     string
-		Package      string
-		ElapsedTime  float64
-		Output       []string
-		Passed       bool
-		TestFileName string
+		TestName           string
+		Package            string
+		ElapsedTime        float64
+		Output             []string
+		Passed             bool
+		TestFileName       string
+		TestFunctionDetail FunctionDetail
 	}
 
 	TemplateData struct {
@@ -115,10 +116,12 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 			testStatus.Output = append(testStatus.Output, goTestOutputRow.Output)
 		}
 	}
+
 	testFileDetailByPackage, err := getPackageDetails(allPackageNames)
 	if err != nil {
 		return nil
 	}
+
 	if tpl, err := template.ParseFiles("test_report.html.template"); err != nil {
 		return err
 	} else {
@@ -160,6 +163,13 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 			if len(tmplData.TestResults) == tgId {
 				tmplData.TestResults = append(tmplData.TestResults, &TestGroupData{})
 			}
+
+			testFileInfo := testFileDetailByPackage[status.Package][status.TestName]
+			if testFileInfo != nil {
+				status.TestFileName = testFileInfo.FileName
+				status.TestFunctionDetail = testFileInfo.FunctionDetail
+			}
+
 			tmplData.TestResults[tgId].TestResults = append(tmplData.TestResults[tgId].TestResults, status)
 			if !status.Passed {
 				tmplData.TestResults[tgId].FailureIndicator = "failed"
@@ -177,12 +187,12 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 		err = tpl.Execute(w, tmplData)
 	}
 
-	for _, testGroup := range tmplData.TestResults {
-		for _, result := range testGroup.TestResults {
-			//fmt.Println(result.TestName)
-			fmt.Println(testFileDetailByPackage[result.Package][result.TestName])
-		}
-	}
+	//for _, testGroup := range tmplData.TestResults {
+	//	for _, result := range testGroup.TestResults {
+	//		//fmt.Println(result.TestName)
+	//		fmt.Println(testFileDetailByPackage[result.Package][result.TestName])
+	//	}
+	//}
 
 	//for _, testGroup := range tmplData.TestResults {
 	//	for _, testResult := range testGroup.TestResults {
@@ -243,7 +253,6 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsBy
 	testFileDetailByPackage := TestFileDetailsByPackage{}
 	for packageName := range allPackageNames {
 		cmd = exec.Command("go", "list", "-json", packageName)
-		fmt.Println(packageName)
 		out.Reset()
 		cmd.Stdin = strings.NewReader("")
 		cmd.Stdout = &out

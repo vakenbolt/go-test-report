@@ -13,7 +13,12 @@ const mockData = [
         "test output A 1\n",
         "test output A 2\n",
         "test output A 3\n",
-      ]
+      ],
+      TestFileName: "test_test.go",
+      TestFunctionDetail: {
+        Line: 1,
+        Col: 10,
+      },
     }]
   }, {
     "TestResults": [{
@@ -24,7 +29,12 @@ const mockData = [
         "test output B 1\n",
         "test output B 2\n",
         "test output B 3\n",
-      ]
+      ],
+      TestFileName: "test_test_1.go",
+      TestFunctionDetail: {
+        Line: 20,
+        Col: 1,
+      },
     }, {
       TestName: "my_sample_test 3",
       Package: "test/package 3",
@@ -33,7 +43,12 @@ const mockData = [
         "test output C 1\n",
         "test output C 2\n",
         "test output C 3\n",
-      ]
+      ],
+      TestFileName: "test_test_2.go",
+      TestFunctionDetail: {
+        Line: 33,
+        Col: 7,
+      },
     }]
   }, {
     "TestResults": [{
@@ -44,7 +59,12 @@ const mockData = [
         "test output D 1\n",
         "test output D 2\n",
         "test output D 3\n",
-      ]
+      ],
+      TestFileName: "test_test_3.go",
+      TestFunctionDetail: {
+        Line: 101,
+        Col: 9,
+      },
     }]
   }]
 
@@ -127,7 +147,7 @@ test('test testGroupListHandler using [test group: 0]', () => {
   const packageElem = testDetailElem.querySelector('.package')
   expect(packageElem.innerHTML).toBe(`<strong>Package:</strong> test/package 1`)
   const filenameElem = testDetailElem.querySelector('.filename')
-  expect(filenameElem.innerHTML).toBe(`<strong>Filename:</strong> `)
+  expect(filenameElem.innerHTML).toBe(`<strong>Filename:</strong> test_test.go &nbsp;&nbsp;<strong>Line:</strong> 1 <strong>Col:</strong> 10`)
 })
 
 test('test testGroupListHandler using [test group: 1]', () => {
@@ -141,5 +161,5 @@ test('test testGroupListHandler using [test group: 1]', () => {
   const packageElem = testDetailElem.querySelector('.package')
   expect(packageElem.innerHTML).toBe(`<strong>Package:</strong> test/package 4`)
   const filenameElem = testDetailElem.querySelector('.filename')
-  expect(filenameElem.innerHTML).toBe(`<strong>Filename:</strong> `)
+  expect(filenameElem.innerHTML).toBe(`<strong>Filename:</strong> test_test_3.go &nbsp;&nbsp;<strong>Line:</strong> 101 <strong>Col:</strong> 9`)
 })
