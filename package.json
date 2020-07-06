@@ -2,7 +2,7 @@
   "name": "go-test-report",
   "version": "0.9.0",
   "description": "UI for go-test-report",
-  "main": "test_report.js",
+  "main": "embed_assets/test_report.js",
   "scripts": {
     "test": "jest"
   },

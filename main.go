@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 	"go/token"
 	"go/types"
 	"html/template"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -147,7 +147,13 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 		return nil
 	}
 
-	if tpl, err := template.ParseFiles("test_report.html.template"); err != nil {
+	// read the html template from embedded asset go file
+	tpl := template.New("test_report.html.template")
+	testReportHtmlTemplateStr, err := hex.DecodeString(testReportHtmlTemplate)
+	if err != nil {
+		return err
+	}
+	if tpl, err := tpl.Parse(string(testReportHtmlTemplateStr)); err != nil {
 		return err
 	} else {
 		testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
@@ -161,15 +167,15 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 			}
 		}()
 
-		// read Javascript test code
-		jsCode, err := ioutil.ReadFile("test_report.js")
+		// read Javascript code from embedded asset go file
+		testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
 		if err != nil {
 			return err
 		}
 
 		tmplData.NumOfTestPassed = 0
 		tmplData.NumOfTestFailed = 0
-		tmplData.JsCode = template.JS(jsCode)
+		tmplData.JsCode = template.JS(testReportJsCodeStr)
 		tgCounter := 0
 		tgId := 0
 
