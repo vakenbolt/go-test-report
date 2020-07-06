@@ -65,13 +65,38 @@ type (
 		groupSize  int
 		outputFlag string
 	}
+
+	GoListJsonModule struct {
+		Path string
+		Dir  string
+		Main bool
+	}
+
+	GoListJson struct {
+		Dir         string
+		ImportPath  string
+		Name        string
+		GoFiles     []string
+		TestGoFiles []string
+		Module      GoListJsonModule
+	}
+
+	FunctionDetail struct {
+		Line int
+		Col  int
+	}
+
+	TestFileDetail struct {
+		FileName       string
+		FunctionDetail FunctionDetail
+	}
+
+	TestFileDetailsByPackage map[string]map[string]*TestFileDetail
 )
 
 func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 	stdin := os.Stdin
 	if err := checkIfStdinIsPiped(cmd); err != nil {
-		//fmt.Println(err.Error())
-		//os.Exit(1)
 		return err
 	}
 
@@ -80,7 +105,6 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 	var allPackageNames = map[string]*types.Nil{}
 
 	// read from stdin and parse "go test" results
-
 	defer func() {
 		if err = stdin.Close(); err != nil {
 			panic(err)
@@ -92,7 +116,7 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 		lineInput := stdinScanner.Bytes()
 		goTestOutputRow := &goTestOutputRow{}
 		if err := json.Unmarshal(lineInput, goTestOutputRow); err != nil {
-			fmt.Println(err)
+			return err
 		}
 		if goTestOutputRow.TestName != "" {
 			var testStatus *TestStatus
@@ -117,6 +141,7 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 		}
 	}
 
+	// used to the location of test functions in test go files by package and test function name.
 	testFileDetailByPackage, err := getPackageDetails(allPackageNames)
 	if err != nil {
 		return nil
@@ -129,7 +154,7 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 		w := bufio.NewWriter(testReportHTMLTemplateFile)
 		defer func() {
 			if err := w.Flush(); err != nil {
-				fmt.Println(err)
+				panic(err)
 			}
 			if err := testReportHTMLTemplateFile.Close(); err != nil {
 				panic(err)
@@ -142,17 +167,6 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 			return err
 		}
 
-		//tmplData := TemplateData{
-		//	ReportTitle:                    "go-test-report",
-		//	TestResultGroupIndicatorWidth:  "24px",
-		//	TestResultGroupIndicatorHeight: "24px",
-		//	NumOfTestPassed:                0,
-		//	NumOfTestFailed:                0,
-		//	TestResults:                    []*TestGroupData{},
-		//	NumOfTests:                     0,
-		//	JsCode:                         template.JS(jsCode),
-		//	numOfTestsPerGroup:             20,
-		//}
 		tmplData.NumOfTestPassed = 0
 		tmplData.NumOfTestFailed = 0
 		tmplData.JsCode = template.JS(jsCode)
@@ -164,6 +178,7 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 				tmplData.TestResults = append(tmplData.TestResults, &TestGroupData{})
 			}
 
+			// add file info(name and position; line and col) associated with the test function
 			testFileInfo := testFileDetailByPackage[status.Package][status.TestName]
 			if testFileInfo != nil {
 				status.TestFileName = testFileInfo.FileName
@@ -186,66 +201,8 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
 		err = tpl.Execute(w, tmplData)
 	}
-
-	//for _, testGroup := range tmplData.TestResults {
-	//	for _, result := range testGroup.TestResults {
-	//		//fmt.Println(result.TestName)
-	//		fmt.Println(testFileDetailByPackage[result.Package][result.TestName])
-	//	}
-	//}
-
-	//for _, testGroup := range tmplData.TestResults {
-	//	for _, testResult := range testGroup.TestResults {
-	//		fmt.Println(testFileDetailByPackage[testResult.Package])
-	//	}
-	//}
-	//for packageName := range testFileDetailByPackage {
-	//	//fmt.Println(m[s].FileName)
-	//	//fmt.Println(packageName)
-	//	for testFilePath := range testFileDetailByPackage[packageName] {
-	//		//fmt.Println(testFilePath)
-	//		//fmt.Println(testFileDetailByPackage[packageName][testFilePath].FileName)
-	//		for _, functionInfo := range testFileDetailByPackage[packageName][testFilePath].Functions {
-	//			fmt.Println(functionInfo)
-	//
-	//		}
-	//	}
-	//	fmt.Println("----")
-	//}
-	//o, _ := json.Marshal(testFileDetailByPackage)
-	//fmt.Println(string(o))
-	//fmt.Println(testNamesByPackage)
 	return nil
 }
-
-type (
-	GoListJsonModule struct {
-		Path string
-		Dir  string
-		Main bool
-	}
-
-	GoListJson struct {
-		Dir         string
-		ImportPath  string
-		Name        string
-		GoFiles     []string
-		TestGoFiles []string
-		Module      GoListJsonModule
-	}
-)
-
-type FunctionDetail struct {
-	Line int
-	Col  int
-}
-
-type TestFileDetail struct {
-	FileName       string
-	FunctionDetail FunctionDetail
-}
-
-type TestFileDetailsByPackage map[string]map[string]*TestFileDetail
 
 func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsByPackage, error) {
 	var out bytes.Buffer
@@ -405,54 +362,4 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	/*
-		if err := getPackageDetails([]string{"./..."}); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-	*/
 }
-
-//func pipeEchoCmdToShellCmd(echoCmd *exec.Cmd, shellCmd *exec.Cmd) {
-//	var err error
-//	rPipe, wPipe := io.Pipe()
-//	echoCmd.Stdout = wPipe
-//	shellCmd.Stdin = rPipe
-//	stdoutPipe, err := shellCmd.StdoutPipe()
-//	if err != nil {
-//		fmt.Println(err.Error())
-//		os.Exit(1)
-//	}
-//	stderrPipe, err := shellCmd.StderrPipe()
-//	if err != nil {
-//		fmt.Println(err.Error())
-//		os.Exit(1)
-//	}
-//	errorCheck(echoCmd.Start())
-//	errorCheck(shellCmd.Start())
-//	errorCheck(echoCmd.Wait())
-//	errorCheck(wPipe.Close())
-//	scanStdOutErrWithPipeToConsole(&stdoutPipe, &stderrPipe, true)
-//	errorCheck(shellCmd.Wait())
-//}
-
-//func scanStdOutErrWithPipeToConsole(stdout *io.ReadCloser, stderr *io.ReadCloser, useColor bool) {
-//	stdoutScanner := bufio.NewScanner(*stdout)
-//	stdoutScanner.Split(bufio.ScanLines)
-//	for stdoutScanner.Scan() {
-//		m := stdoutScanner.Text()
-//		fmt.Println(m)
-//	}
-//	stderrScanner := bufio.NewScanner(*stderr)
-//	stderrScanner.Split(bufio.ScanLines)
-//	for stderrScanner.Scan() {
-//		fmt.Println(stderrScanner.Text())
-//	}
-//}
-
-//func errorCheck(err error) {
-//	if err != nil {
-//		fmt.Println(err.Error())
-//		os.Exit(1)
-//	}
-//}
