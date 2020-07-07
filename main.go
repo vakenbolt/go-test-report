@@ -327,7 +327,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 				return errors.New(err.Error() + "\n")
 			}
 			elapsedTime := time.Since(startTime)
-			elapsedTimeMsg := []byte(fmt.Sprintf("\n[go-test-report] finished in %s\n", elapsedTime))
+			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
 			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
 				return err
 			}
@@ -355,7 +355,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 		"size",
 		"s",
 		"24",
-		"the size of the clickable indicator for test result groups")
+		"the size (in pixels) of the clickable indicator for test result groups")
 	rootCmd.PersistentFlags().IntVarP(&flags.groupSize,
 		"groupSize",
 		"g",
