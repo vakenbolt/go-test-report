@@ -29,10 +29,10 @@ func main() {
 	}()
 	dst := make([]byte, hex.EncodedLen(len(htmlTemplate)))
 	hex.Encode(dst, htmlTemplate)
-	_, _ = writer.WriteString(fmt.Sprintf("package main\n\nvar testReportHtmlTemplateSize = %d\nvar testReportHtmlTemplate = `%s`", len(htmlTemplate), string(dst)))
+	_, _ = writer.WriteString(fmt.Sprintf("package main\n\nvar testReportHtmlTemplate = `%s`", string(dst)))
 	dst = make([]byte, hex.EncodedLen(len(jsCode)))
 	hex.Encode(dst, jsCode)
-	_, _ = writer.WriteString(fmt.Sprintf("\n\nvar testReportJsCodeSize = %d\nvar testReportJsCode = `%s`", len(jsCode), string(dst)))
+	_, _ = writer.WriteString(fmt.Sprintf("\n\nvar testReportJsCode = `%s`", string(dst)))
 }
 
 func TestReportHtmlTemplate() ([]byte, error) {
