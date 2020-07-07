@@ -39,7 +39,7 @@ type (
 		Output             []string
 		Passed             bool
 		TestFileName       string
-		TestFunctionDetail FunctionDetail
+		TestFunctionDetail TestFunctionFilePos
 	}
 
 	TemplateData struct {
@@ -83,14 +83,14 @@ type (
 		Module      GoListJsonModule
 	}
 
-	FunctionDetail struct {
+	TestFunctionFilePos struct {
 		Line int
 		Col  int
 	}
 
 	TestFileDetail struct {
-		FileName       string
-		FunctionDetail FunctionDetail
+		FileName            string
+		TestFunctionFilePos TestFunctionFilePos
 	}
 
 	TestFileDetailsByPackage map[string]map[string]*TestFileDetail
@@ -196,7 +196,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 			testFileInfo := testFileDetailByPackage[status.Package][status.TestName]
 			if testFileInfo != nil {
 				status.TestFileName = testFileInfo.FileName
-				status.TestFunctionDetail = testFileInfo.FunctionDetail
+				status.TestFunctionDetail = testFileInfo.TestFunctionFilePos
 			}
 
 			tmplData.TestResults[tgId].TestResults = append(tmplData.TestResults[tgId].TestResults, status)
@@ -254,7 +254,7 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsBy
 					lineNum, _ := strconv.Atoi(fileDetails[1])
 					colNum, _ := strconv.Atoi(fileDetails[2])
 					testFileDetail.FileName = fileDetails[0]
-					testFileDetail.FunctionDetail = FunctionDetail{
+					testFileDetail.TestFunctionFilePos = TestFunctionFilePos{
 						Line: lineNum,
 						Col:  colNum,
 					}
