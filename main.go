@@ -64,6 +64,7 @@ type (
 		sizeFlag   string
 		groupSize  int
 		outputFlag string
+		verbose    bool
 	}
 
 	GoListJsonModule struct {
@@ -94,7 +95,7 @@ type (
 	TestFileDetailsByPackage map[string]map[string]*TestFileDetail
 )
 
-func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
+func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Command) error {
 	stdin := os.Stdin
 	if err := checkIfStdinIsPiped(cmd); err != nil {
 		return err
@@ -114,6 +115,12 @@ func generateTestReport(tmplData *TemplateData, cmd *cobra.Command) error {
 	for stdinScanner.Scan() {
 		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
+		if flags.verbose {
+			newline := []byte("\n")
+			if _, err := cmd.OutOrStdout().Write(append(lineInput, newline[0])); err != nil {
+				return err
+			}
+		}
 		goTestOutputRow := &goTestOutputRow{}
 		if err := json.Unmarshal(lineInput, goTestOutputRow); err != nil {
 			return err
@@ -297,9 +304,6 @@ func checkIfStdinIsPiped(rootCmd *cobra.Command) error {
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		return nil
 	} else {
-		if err := rootCmd.Help(); err != nil {
-			return err
-		}
 		return errors.New("ERROR: missing ≪ stdin ≫ pipe")
 	}
 }
@@ -319,8 +323,8 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
-			if err := generateTestReport(tmplData, cmd); err != nil {
-				return err
+			if err := generateTestReport(flags, tmplData, cmd); err != nil {
+				return errors.New(err.Error() + "\n")
 			}
 			// end timer
 			return nil
@@ -358,6 +362,11 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 		"o",
 		"test_report.html",
 		"the HTML output file")
+	rootCmd.PersistentFlags().BoolVarP(&flags.verbose,
+		"verbose",
+		"v",
+		false,
+		"while processing, show the complete output from go test ")
 
 	return rootCmd, tmplData, flags
 }
@@ -365,7 +374,6 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 func main() {
 	rootCmd, _, _ := newRootCommand()
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
