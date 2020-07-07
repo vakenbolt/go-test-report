@@ -12,10 +12,10 @@
         }
 
         div.pageHeader span.projectTitle {
-            font-family: cursive;
+            font-family: serif;
             font-size: 2em;
             padding-left: 56px;
-            padding-top: 16px;
+            padding-top: 80px;
             display: block;
             color: #a5a5a5;
             text-shadow: 0 -1px 1px white;
@@ -24,7 +24,7 @@
         div.pageHeader div.testStats {
             position: absolute;
             top: 7px;
-            right: 48px;
+            right: 52px;
             font-size: 0.8em;
             color: #a2a2a2;
         }
@@ -41,27 +41,28 @@
         }
 
         div.pageHeader div.testStats span.total {
-            color: dodgerblue;
             border-right: 1px #afafaf dotted;
+            background: #8298af;
         }
 
         div.pageHeader div.testStats span.passed {
-            color: green;
             border-right: 1px #afafaf dotted;
+            background: #6fca83;
         }
 
         div.pageHeader div.testStats span.failed {
-            color: red;
+            background: #ff7676;
         }
 
         div.pageHeader div.testStats span {
-            padding: 8px;
             margin-right: 1px;
-            border-bottom-left-radius: 4px;
+            height: 55px;
+            padding: 20px 8px 18px;
+            color: white;
         }
 
         div.pageHeader .testGroupsTitle {
-            margin: 32px 32px 8px 40px;
+            margin: 16px 32px 8px 40px;
             font-size: 0.9em;
             color: darkgrey;
             display: block;
@@ -192,9 +193,9 @@
 <div class="pageHeader">
     <span class="projectTitle">{{.ReportTitle}}</span>
     <div class="testStats">
-        <span class="total"><span class="indicator">&boxbox;</span> Total: <strong>{{.NumOfTests}}</strong></span>
-        <span class="passed"><span class="indicator">&check;</span> Passed: <strong>{{.NumOfTestPassed}}</strong></span>
-        <span class="failed"><span class="indicator">&cross;</span> Failed: <strong>{{.NumOfTestFailed}}</strong></span>
+        <span class="total"><span class="indicator">&boxbox;</span> Total: <strong>{{.NumOfTests}}</strong>
+        </span><span class="passed"><span class="indicator">&check;</span> Passed: <strong>{{.NumOfTestPassed}}</strong>
+        </span><span class="failed"><span class="indicator">&cross;</span> Failed: <strong>{{.NumOfTestFailed}}</strong></span>
     </div>
     <span class="testGroupsTitle">Test Groups:</span>
 </div>
