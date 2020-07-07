@@ -98,7 +98,7 @@ type (
 
 func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Command) error {
 	stdin := os.Stdin
-	if err := checkIfStdinIsPiped(cmd); err != nil {
+	if err := checkIfStdinIsPiped(); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 		return nil
 	}
 
-	// read the html template from embedded asset go file
+	// read the html template from the generated embedded asset go file
 	tpl := template.New("test_report.html.template")
 	testReportHtmlTemplateStr, err := hex.DecodeString(testReportHtmlTemplate)
 	if err != nil {
@@ -175,7 +175,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 			}
 		}()
 
-		// read Javascript code from embedded asset go file
+		// read Javascript code from the generated embedded asset go file
 		testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
 		if err != nil {
 			return err
@@ -297,7 +297,7 @@ func parseSizeFlag(tmplData *TemplateData, flags *cmdFlags) error {
 	}
 }
 
-func checkIfStdinIsPiped(rootCmd *cobra.Command) error {
+func checkIfStdinIsPiped() error {
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		return err
