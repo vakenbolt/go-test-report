@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var version = "0.9"
@@ -315,8 +316,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 		Use:  "go-test-report",
 		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// start timer
-			// -- do stuff
+			startTime := time.Now()
 			if err := parseSizeFlag(tmplData, flags); err != nil {
 				return err
 			}
@@ -326,7 +326,11 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			if err := generateTestReport(flags, tmplData, cmd); err != nil {
 				return errors.New(err.Error() + "\n")
 			}
-			// end timer
+			elapsedTime := time.Since(startTime)
+			elapsedTimeMsg := []byte(fmt.Sprintf("\n[go-test-report] finished in %s\n", elapsedTime))
+			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
+				return err
+			}
 			return nil
 		},
 	}
