@@ -34,8 +34,6 @@ go-test-report.html
 Additional configuration options are available via command line flags.
 
 ```
-Captures go test output via stdin and parses it into a single self-contained html file.
-
 Usage:
   go-test-report [flags]
   go-test-report [command]
@@ -45,12 +43,12 @@ Available Commands:
   version     Prints the version number of go-test-report
 
 Flags:
-      --groupSize int   the number of tests per test group indicator (default 10)
+  -g, --groupSize int   the number of tests per test group indicator (default 10)
   -h, --help            help for go-test-report
   -o, --output string   the HTML output file (default "test_report.html")
   -s, --size string     the size of the clickable indicator for test result groups (default "24")
   -t, --title string    the title text shown in the test report (default "go-test-report")
+  -v, --verbose         while processing, show the complete output from go test
 
 Use "go-test-report [command] --help" for more information about a command.
-
-Additional configuration options are available via command line flags.
+```
