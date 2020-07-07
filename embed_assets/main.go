@@ -34,21 +34,3 @@ func main() {
 	hex.Encode(dst, jsCode)
 	_, _ = writer.WriteString(fmt.Sprintf("\n\nvar testReportJsCode = `%s`", string(dst)))
 }
-
-func TestReportHtmlTemplate() ([]byte, error) {
-	dst := make([]byte, hex.DecodedLen(len(htmlTemplate)))
-	if _, err := hex.Decode(dst, htmlTemplate); err != nil {
-		return nil, err
-	} else {
-		return dst, err
-	}
-}
-
-func TestReportJsCode() ([]byte, error) {
-	dst := make([]byte, hex.DecodedLen(len(jsCode)))
-	if _, err := hex.Decode(dst, jsCode); err != nil {
-		return nil, err
-	} else {
-		return dst, err
-	}
-}
