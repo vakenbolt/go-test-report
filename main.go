@@ -191,14 +191,12 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 			if len(tmplData.TestResults) == tgId {
 				tmplData.TestResults = append(tmplData.TestResults, &TestGroupData{})
 			}
-
 			// add file info(name and position; line and col) associated with the test function
 			testFileInfo := testFileDetailByPackage[status.Package][status.TestName]
 			if testFileInfo != nil {
 				status.TestFileName = testFileInfo.FileName
 				status.TestFunctionDetail = testFileInfo.TestFunctionFilePos
 			}
-
 			tmplData.TestResults[tgId].TestResults = append(tmplData.TestResults[tgId].TestResults, status)
 			if !status.Passed {
 				tmplData.TestResults[tgId].FailureIndicator = "failed"
@@ -286,7 +284,6 @@ func parseSizeFlag(tmplData *TemplateData, flags *cmdFlags) error {
 			return err
 		} else {
 			tmplData.TestResultGroupIndicatorWidth = fmt.Sprintf("%dpx", val)
-
 		}
 		if val, err := strconv.Atoi(a[1]); err != nil {
 			return err
