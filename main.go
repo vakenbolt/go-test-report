@@ -49,6 +49,7 @@ type (
 		NumOfTestPassed                int
 		NumOfTestFailed                int
 		NumOfTests                     int
+		TestDuration                   time.Duration
 		ReportTitle                    string
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
@@ -113,6 +114,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 		}
 	}()
 	stdinScanner := bufio.NewScanner(stdin)
+	startTestTime := time.Now()
 	for stdinScanner.Scan() {
 		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
@@ -148,6 +150,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 			testStatus.Output = append(testStatus.Output, goTestOutputRow.Output)
 		}
 	}
+	elapsedTestTime := time.Since(startTestTime)
 
 	// used to the location of test functions in test go files by package and test function name.
 	testFileDetailByPackage, err := getPackageDetails(allPackageNames)
@@ -211,6 +214,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 			}
 		}
 		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
+		tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
 		err = tpl.Execute(w, tmplData)
 	}
 	return nil

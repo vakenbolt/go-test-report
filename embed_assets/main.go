@@ -12,8 +12,8 @@ var htmlTemplate []byte
 var jsCode []byte
 
 func init() {
-	htmlTemplate, _ = ioutil.ReadFile("test_report.html.template")
-	jsCode, _ =  ioutil.ReadFile("test_report.js")
+	htmlTemplate, _ = ioutil.ReadFile("../test_report.html.template")
+	jsCode, _ =  ioutil.ReadFile("../test_report.js")
 }
 
 func main() {

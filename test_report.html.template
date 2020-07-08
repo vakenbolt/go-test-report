@@ -193,7 +193,7 @@
 <div class="pageHeader">
     <span class="projectTitle">{{.ReportTitle}}</span>
     <div class="testStats">
-        <span class="total"><span class="indicator">&boxbox;</span> Total: <strong>{{.NumOfTests}}</strong>
+        <span class="total"><span class="indicator">&boxbox;</span> Total: <strong>{{.NumOfTests}}</strong>Duration: <strong>{{.TestDuration}}</strong>
         </span><span class="passed"><span class="indicator">&check;</span> Passed: <strong>{{.NumOfTestPassed}}</strong>
         </span><span class="failed"><span class="indicator">&cross;</span> Failed: <strong>{{.NumOfTestFailed}}</strong></span>
     </div>
