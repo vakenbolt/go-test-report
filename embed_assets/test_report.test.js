@@ -1,5 +1,5 @@
 const expect = require('@jest/globals').expect
-require('./embed_assets/test_report.js')
+require('./test_report.js')
 
 /**
  * @property {Array.<TestResults>} TestResults
