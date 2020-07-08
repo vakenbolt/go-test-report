@@ -164,6 +164,7 @@
             color: #1aff00;
             border-bottom: 1px #1aff00 dotted;
             overflow: auto;
+            font-size: 1.1em;
         }
 
         .cardContainer .testOutput .testDetail {
@@ -176,7 +177,7 @@
         }
 
         .cardContainer .console.failed {
-            color: #ff7d7d;
+            color: #ffb2b2;
         }
 
         .cardContainer .testDuration {
