@@ -1,4 +1,8 @@
-FROM alpine
+#FROM alpine
+FROM golang:1.14-alpine
+
+# installs GCC, libc-dev, etc
+RUN apk add build-base
 
 # makes working with alpine-linux a little easier
 RUN apk add --no-cache shadow
@@ -15,3 +19,13 @@ ADD . .
 RUN npm install
 RUN npm fund
 RUN npm run test
+
+# WORKDIR /home/dockeruser/embed_assets
+# RUN go build
+# RUN ./embed_assets
+
+
+# WORKDIR /home/dockeruser
+
+RUN ./generate_embedded_go_code.sh
+RUN go test -v
