@@ -78,6 +78,7 @@ window.GoTestReport = function (elements) {
       }
       if (selectedItems.testResults != null) {
         let testResultsElement = /**@type {HTMLElement}*/ selectedItems.testResults
+        testResultsElement.classList.remove("selected")
         testResultsElement.style.backgroundColor = selectedItems.selectedTestGroupColor
       }
       const testGroupId = /**@type {number}*/ target.id
@@ -90,7 +91,7 @@ window.GoTestReport = function (elements) {
       let testGroupList = /**@type {string}*/ ''
       selectedItems.selectedTestGroupColor = getComputedStyle(target).getPropertyValue('background-color')
       selectedItems.testResults = target
-      target.style.backgroundColor = 'black'
+      target.classList.add("selected")
       for (let i = 0; i < testResults.length; i++) {
         const testResult = /**@type {TestGroupData}*/ testResults[i]
         const testPassed = /**@type {boolean}*/ testResult.Passed

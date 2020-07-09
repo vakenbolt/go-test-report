@@ -89,6 +89,12 @@
             background-color: #43c143;
             margin-left: 1px;
             margin-bottom: 1px;
+            box-sizing: border-box;
+        }
+
+        .testResultGroup.selected {
+            border: 1px white solid;
+            background-color: black !important;
         }
 
         .testResultGroup.failed {

@@ -19,6 +19,7 @@ func TestVersionCommand(t *testing.T) {
 	output, readErr := ioutil.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal(fmt.Sprintf("go-test-report v%s\n", version), string(output))
+	assertions.True(false)
 }
 
 func TestTitleFlag(t *testing.T) {
