@@ -360,7 +360,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	rootCmd.PersistentFlags().IntVarP(&flags.groupSize,
 		"groupSize",
 		"g",
-		10,
+		20,
 		"the number of tests per test group indicator")
 	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
 		"output",
