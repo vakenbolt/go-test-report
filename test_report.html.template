@@ -123,8 +123,8 @@
             color: #139e13;
             padding: 0 4px 0 24px;
             position: relative;
-            top: 2px;
-            pointer-events: none;
+            top: -11px;
+            pointer-events: none
         }
 
         .cardContainer.testGroupList .testGroupRow span.testStatus.failed {
@@ -133,10 +133,13 @@
 
         .cardContainer.testGroupList .testGroupRow span.testTitle {
             font-size: 0.9em;
-            padding: 12px 0px 12px;
+            padding: 12px 0 10px;
             display: inline-block;
             pointer-events: none;
             color: #525252;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            width: calc(100% - 110px);
         }
 
         .cardContainer.testGroupList .testGroupRow span.testDuration {
