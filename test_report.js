@@ -140,10 +140,13 @@ window.GoTestReport = function (elements) {
           packageNameDiv.innerHTML = `<strong>Package:</strong> ${testStatus.Package}`
           const testFileNameDiv = document.createElement('div')
           testFileNameDiv.classList.add('filename')
-          testFileNameDiv.innerHTML = `<strong>Filename:</strong> ${testStatus.TestFileName} &nbsp;&nbsp;`
-          testFileNameDiv.innerHTML += `<strong>Line:</strong> ${testStatus.TestFunctionDetail.Line} `
-          testFileNameDiv.innerHTML += `<strong>Col:</strong> ${testStatus.TestFunctionDetail.Col}`
-
+          if (testStatus.TestFileName.trim() === "") {
+            testFileNameDiv.innerHTML = `<strong>Filename:</strong> n/a &nbsp;&nbsp;`
+          } else {
+            testFileNameDiv.innerHTML = `<strong>Filename:</strong> ${testStatus.TestFileName} &nbsp;&nbsp;`
+            testFileNameDiv.innerHTML += `<strong>Line:</strong> ${testStatus.TestFunctionDetail.Line} `
+            testFileNameDiv.innerHTML += `<strong>Col:</strong> ${testStatus.TestFunctionDetail.Col}`
+          }
           testDetailDiv.insertAdjacentElement('beforeend', packageNameDiv)
           testDetailDiv.insertAdjacentElement('beforeend', testFileNameDiv)
           testOutputDiv.insertAdjacentElement('afterbegin', consoleSpan)
