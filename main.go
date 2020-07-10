@@ -290,7 +290,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
 		tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
 		td := time.Now()
-		tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d, %d:%d:%d",
+		tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d %02d:%02d:%02d",
 			td.Month(), td.Day(), td.Year(), td.Hour(), td.Minute(), td.Second())
 
 		err = tpl.Execute(w, tmplData)
