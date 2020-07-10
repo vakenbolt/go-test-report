@@ -155,8 +155,8 @@ func TestGenerateReport(t *testing.T) {
 {"Time":"2020-07-10T01:24:44.270311-05:00","Action":"pass","Package":"go-test-report","Test":"TestFunc2","Elapsed":0.25}
 {"Time":"2020-07-10T01:24:44.269511-05:00","Action":"run","Package":"go-test-report","Test":"TestFunc3"}
 {"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"=== RUN   TestFunc3\n"}
-{"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"--- PASS: TestFunc3 (0.00s)\n"}
-{"Time":"2020-07-10T01:24:44.270311-05:00","Action":"pass","Package":"go-test-report","Test":"TestFunc3","Elapsed":0}
+{"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"--- FAIL: TestFunc3 (0.00s)\n"}
+{"Time":"2020-07-10T01:24:44.270311-05:00","Action":"fail","Package":"go-test-report","Test":"TestFunc3","Elapsed":0}
 `
 	stdinScanner := bufio.NewScanner(strings.NewReader(data))
 	tmplData := &TemplateData{
@@ -171,8 +171,8 @@ func TestGenerateReport(t *testing.T) {
 	bb := bufio.NewWriter(b)
 	err := generateReport(stdinScanner, flags, tmplData, bb, cmd)
 	assertions.Nil(err)
-	assertions.Equal(3, tmplData.NumOfTestPassed)
-	assertions.Equal(0, tmplData.NumOfTestFailed)
+	assertions.Equal(2, tmplData.NumOfTestPassed)
+	assertions.Equal(1, tmplData.NumOfTestFailed)
 	assertions.Equal(3, tmplData.NumOfTests)
 
 	assertions.Equal("TestFunc1", tmplData.TestResults[0].TestResults[0].TestName)
@@ -191,7 +191,7 @@ func TestGenerateReport(t *testing.T) {
 
 	assertions.Equal("TestFunc3", tmplData.TestResults[1].TestResults[0].TestName)
 	assertions.Equal("go-test-report", tmplData.TestResults[1].TestResults[0].Package)
-	assertions.Equal(true, tmplData.TestResults[1].TestResults[0].Passed)
+	assertions.Equal(false, tmplData.TestResults[1].TestResults[0].Passed)
 	assertions.Empty(tmplData.TestResults[1].TestResults[0].TestFileName)
 	assertions.Equal(0, tmplData.TestResults[1].TestResults[0].TestFunctionDetail.Col)
 	assertions.Equal(0, tmplData.TestResults[1].TestResults[0].TestFunctionDetail.Line)
