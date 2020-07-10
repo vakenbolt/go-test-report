@@ -54,6 +54,7 @@ type (
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
 		OutputFilename                 string
+		TestExecutionDate              string
 	}
 
 	TestGroupData struct {
@@ -96,6 +97,79 @@ type (
 
 	TestFileDetailsByPackage map[string]map[string]*TestFileDetail
 )
+
+func main() {
+	rootCmd, _, _ := newRootCommand()
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
+	flags := &cmdFlags{}
+	tmplData := &TemplateData{}
+	rootCmd := &cobra.Command{
+		Use:  "go-test-report",
+		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			startTime := time.Now()
+			if err := parseSizeFlag(tmplData, flags); err != nil {
+				return err
+			}
+			tmplData.numOfTestsPerGroup = flags.groupSize
+			tmplData.ReportTitle = flags.titleFlag
+			tmplData.OutputFilename = flags.outputFlag
+			if err := generateTestReport(flags, tmplData, cmd); err != nil {
+				return errors.New(err.Error() + "\n")
+			}
+			elapsedTime := time.Since(startTime)
+			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
+			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
+				return err
+			}
+			return nil
+		},
+	}
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Prints the version number of go-test-report",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			msg := fmt.Sprintf("go-test-report v%s", version)
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), msg); err != nil {
+				return err
+			}
+			return nil
+		},
+	}
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.PersistentFlags().StringVarP(&flags.titleFlag,
+		"title",
+		"t",
+		"go-test-report",
+		"the title text shown in the test report")
+	rootCmd.PersistentFlags().StringVarP(&flags.sizeFlag,
+		"size",
+		"s",
+		"24",
+		"the size (in pixels) of the clickable indicator for test result groups")
+	rootCmd.PersistentFlags().IntVarP(&flags.groupSize,
+		"groupSize",
+		"g",
+		20,
+		"the number of tests per test group indicator")
+	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
+		"output",
+		"o",
+		"test_report.html",
+		"the HTML output file")
+	rootCmd.PersistentFlags().BoolVarP(&flags.verbose,
+		"verbose",
+		"v",
+		false,
+		"while processing, show the complete output from go test ")
+
+	return rootCmd, tmplData, flags
+}
 
 func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Command) error {
 	stdin := os.Stdin
@@ -215,6 +289,10 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 		}
 		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
 		tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
+		td := time.Now()
+		tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d, %d:%d:%d",
+			td.Month(), td.Day(), td.Year(), td.Hour(), td.Minute(), td.Second())
+
 		err = tpl.Execute(w, tmplData)
 	}
 	return nil
@@ -307,78 +385,5 @@ func checkIfStdinIsPiped() error {
 		return nil
 	} else {
 		return errors.New("ERROR: missing ≪ stdin ≫ pipe")
-	}
-}
-
-func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
-	flags := &cmdFlags{}
-	tmplData := &TemplateData{}
-	rootCmd := &cobra.Command{
-		Use:  "go-test-report",
-		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			startTime := time.Now()
-			if err := parseSizeFlag(tmplData, flags); err != nil {
-				return err
-			}
-			tmplData.numOfTestsPerGroup = flags.groupSize
-			tmplData.ReportTitle = flags.titleFlag
-			tmplData.OutputFilename = flags.outputFlag
-			if err := generateTestReport(flags, tmplData, cmd); err != nil {
-				return errors.New(err.Error() + "\n")
-			}
-			elapsedTime := time.Since(startTime)
-			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
-			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	versionCmd := &cobra.Command{
-		Use:   "version",
-		Short: "Prints the version number of go-test-report",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			msg := fmt.Sprintf("go-test-report v%s", version)
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), msg); err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-	rootCmd.AddCommand(versionCmd)
-	rootCmd.PersistentFlags().StringVarP(&flags.titleFlag,
-		"title",
-		"t",
-		"go-test-report",
-		"the title text shown in the test report")
-	rootCmd.PersistentFlags().StringVarP(&flags.sizeFlag,
-		"size",
-		"s",
-		"24",
-		"the size (in pixels) of the clickable indicator for test result groups")
-	rootCmd.PersistentFlags().IntVarP(&flags.groupSize,
-		"groupSize",
-		"g",
-		20,
-		"the number of tests per test group indicator")
-	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
-		"output",
-		"o",
-		"test_report.html",
-		"the HTML output file")
-	rootCmd.PersistentFlags().BoolVarP(&flags.verbose,
-		"verbose",
-		"v",
-		false,
-		"while processing, show the complete output from go test ")
-
-	return rootCmd, tmplData, flags
-}
-
-func main() {
-	rootCmd, _, _ := newRootCommand()
-	if err := rootCmd.Execute(); err != nil {
-		os.Exit(1)
 	}
 }
