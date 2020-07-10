@@ -65,7 +65,16 @@
             margin: 16px 32px 8px 40px;
             font-size: 0.9em;
             color: darkgrey;
-            display: block;
+            display: inline-block;
+        }
+
+        div.pageHeader .testExecutionDate {
+            display: inline-block;
+            position: absolute;
+            right: 10px;
+            margin: 14px 32px 8px 40px;
+            color: #9e9e9e;
+            font-size: 1.1em;
         }
 
         .testReportContainer {
@@ -89,6 +98,12 @@
             background-color: #43c143;
             margin-left: 1px;
             margin-bottom: 1px;
+            box-sizing: border-box;
+        }
+
+        .testResultGroup.selected {
+            border: 1px white solid;
+            background-color: black !important;
         }
 
         .testResultGroup.failed {
@@ -117,8 +132,8 @@
             color: #139e13;
             padding: 0 4px 0 24px;
             position: relative;
-            top: 2px;
-            pointer-events: none;
+            top: -11px;
+            pointer-events: none
         }
 
         .cardContainer.testGroupList .testGroupRow span.testStatus.failed {
@@ -127,10 +142,13 @@
 
         .cardContainer.testGroupList .testGroupRow span.testTitle {
             font-size: 0.9em;
-            padding: 12px 0px 12px;
+            padding: 12px 0 10px;
             display: inline-block;
             pointer-events: none;
             color: #525252;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            width: calc(100% - 110px);
         }
 
         .cardContainer.testGroupList .testGroupRow span.testDuration {
@@ -199,6 +217,7 @@
         </span><span class="failed"><span class="indicator">&cross;</span> Failed: <strong>{{.NumOfTestFailed}}</strong></span>
     </div>
     <span class="testGroupsTitle">Test Groups:</span>
+    <span class="testExecutionDate">{{.TestExecutionDate}}</span>
 </div>
 <div class="testReportContainer">
     <div class="cardContainer">

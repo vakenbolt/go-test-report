@@ -78,6 +78,7 @@ window.GoTestReport = function (elements) {
       }
       if (selectedItems.testResults != null) {
         let testResultsElement = /**@type {HTMLElement}*/ selectedItems.testResults
+        testResultsElement.classList.remove("selected")
         testResultsElement.style.backgroundColor = selectedItems.selectedTestGroupColor
       }
       const testGroupId = /**@type {number}*/ target.id
@@ -90,7 +91,7 @@ window.GoTestReport = function (elements) {
       let testGroupList = /**@type {string}*/ ''
       selectedItems.selectedTestGroupColor = getComputedStyle(target).getPropertyValue('background-color')
       selectedItems.testResults = target
-      target.style.backgroundColor = 'black'
+      target.classList.add("selected")
       for (let i = 0; i < testResults.length; i++) {
         const testResult = /**@type {TestGroupData}*/ testResults[i]
         const testPassed = /**@type {boolean}*/ testResult.Passed
@@ -139,10 +140,13 @@ window.GoTestReport = function (elements) {
           packageNameDiv.innerHTML = `<strong>Package:</strong> ${testStatus.Package}`
           const testFileNameDiv = document.createElement('div')
           testFileNameDiv.classList.add('filename')
-          testFileNameDiv.innerHTML = `<strong>Filename:</strong> ${testStatus.TestFileName} &nbsp;&nbsp;`
-          testFileNameDiv.innerHTML += `<strong>Line:</strong> ${testStatus.TestFunctionDetail.Line} `
-          testFileNameDiv.innerHTML += `<strong>Col:</strong> ${testStatus.TestFunctionDetail.Col}`
-
+          if (testStatus.TestFileName.trim() === "") {
+            testFileNameDiv.innerHTML = `<strong>Filename:</strong> n/a &nbsp;&nbsp;`
+          } else {
+            testFileNameDiv.innerHTML = `<strong>Filename:</strong> ${testStatus.TestFileName} &nbsp;&nbsp;`
+            testFileNameDiv.innerHTML += `<strong>Line:</strong> ${testStatus.TestFunctionDetail.Line} `
+            testFileNameDiv.innerHTML += `<strong>Col:</strong> ${testStatus.TestFunctionDetail.Col}`
+          }
           testDetailDiv.insertAdjacentElement('beforeend', packageNameDiv)
           testDetailDiv.insertAdjacentElement('beforeend', testFileNameDiv)
           testOutputDiv.insertAdjacentElement('afterbegin', consoleSpan)
