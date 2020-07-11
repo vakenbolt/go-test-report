@@ -136,7 +136,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 					e = err
 				}
 			}()
-			if err := generateReport(stdinScanner, flags, tmplData, reportFileWriter, cmd); err != nil {
+			if err := generateReport(getPackageDetails, stdinScanner, flags, tmplData, reportFileWriter, cmd); err != nil {
 				return errors.New(err.Error() + "\n")
 			}
 			elapsedTime := time.Since(startTime)
@@ -188,7 +188,8 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	return rootCmd, tmplData, flags
 }
 
-func generateReport(stdinScanner *bufio.Scanner, flags *cmdFlags, tmplData *TemplateData, reportFileWriter *bufio.Writer, cmd *cobra.Command) (e error) {
+func generateReport(getPackageDetails func(allPackageNames map[string]*types.Nil) (TestFileDetailsByPackage, error),
+	stdinScanner *bufio.Scanner, flags *cmdFlags, tmplData *TemplateData, reportFileWriter *bufio.Writer, cmd *cobra.Command) (e error) {
 	var err error
 	var allTests = map[string]*TestStatus{}
 	var allPackageNames = map[string]*types.Nil{}

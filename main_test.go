@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"go/types"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -149,10 +150,10 @@ func TestGenerateReport(t *testing.T) {
 {"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc1","Output":"=== RUN   TestFunc1\n"}
 {"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc1","Output":"--- PASS: TestFunc1 (1.25s)\n"}
 {"Time":"2020-07-10T01:24:44.270311-05:00","Action":"pass","Package":"go-test-report","Test":"TestFunc1","Elapsed":1.25}
-{"Time":"2020-07-10T01:24:44.269511-05:00","Action":"run","Package":"go-test-report","Test":"TestFunc2"}
-{"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc2","Output":"=== RUN   TestFunc2\n"}
-{"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc2","Output":"--- PASS: TestFunc2 (0.25s)\n"}
-{"Time":"2020-07-10T01:24:44.270311-05:00","Action":"pass","Package":"go-test-report","Test":"TestFunc2","Elapsed":0.25}
+{"Time":"2020-07-10T01:24:44.269511-05:00","Action":"run","Package":"package2","Test":"TestFunc2"}
+{"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"package2","Test":"TestFunc2","Output":"=== RUN   TestFunc2\n"}
+{"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"package2","Test":"TestFunc2","Output":"--- PASS: TestFunc2 (0.25s)\n"}
+{"Time":"2020-07-10T01:24:44.270311-05:00","Action":"pass","Package":"package2","Test":"TestFunc2","Elapsed":0.25}
 {"Time":"2020-07-10T01:24:44.269511-05:00","Action":"run","Package":"go-test-report","Test":"TestFunc3"}
 {"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"=== RUN   TestFunc3\n"}
 {"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"--- FAIL: TestFunc3 (0.00s)\n"}
@@ -167,9 +168,28 @@ func TestGenerateReport(t *testing.T) {
 		OutputFilename:                 "test-output-report.html",
 	}
 	cmd := &cobra.Command{}
-	b := &bytes.Buffer{}
-	bb := bufio.NewWriter(b)
-	err := generateReport(stdinScanner, flags, tmplData, bb, cmd)
+	writer := bufio.NewWriter(&bytes.Buffer{})
+	getPackageDetails := func(allPackageNames map[string]*types.Nil) (TestFileDetailsByPackage, error) {
+		m := TestFileDetailsByPackage{}
+		m["go-test-report"] = map[string]*TestFileDetail{}
+		m["go-test-report"]["TestFunc1"] = &TestFileDetail{
+			FileName: "sample1.go",
+			TestFunctionFilePos: TestFunctionFilePos{
+				Line: 101,
+				Col:  1,
+			},
+		}
+		m["package2"] = map[string]*TestFileDetail{}
+		m["package2"]["TestFunc2"] = &TestFileDetail{
+			FileName: "sample2.go",
+			TestFunctionFilePos: TestFunctionFilePos{
+				Line: 784,
+				Col:  17,
+			},
+		}
+		return m, nil
+	}
+	err := generateReport(getPackageDetails, stdinScanner, flags, tmplData, writer, cmd)
 	assertions.Nil(err)
 	assertions.Equal(2, tmplData.NumOfTestPassed)
 	assertions.Equal(1, tmplData.NumOfTestFailed)
@@ -178,16 +198,16 @@ func TestGenerateReport(t *testing.T) {
 	assertions.Equal("TestFunc1", tmplData.TestResults[0].TestResults[0].TestName)
 	assertions.Equal("go-test-report", tmplData.TestResults[0].TestResults[0].Package)
 	assertions.Equal(true, tmplData.TestResults[0].TestResults[0].Passed)
-	assertions.Empty(tmplData.TestResults[0].TestResults[0].TestFileName)
-	assertions.Equal(0, tmplData.TestResults[0].TestResults[0].TestFunctionDetail.Col)
-	assertions.Equal(0, tmplData.TestResults[0].TestResults[0].TestFunctionDetail.Line)
+	assertions.Equal("sample1.go", tmplData.TestResults[0].TestResults[0].TestFileName)
+	assertions.Equal(1, tmplData.TestResults[0].TestResults[0].TestFunctionDetail.Col)
+	assertions.Equal(101, tmplData.TestResults[0].TestResults[0].TestFunctionDetail.Line)
 
 	assertions.Equal("TestFunc2", tmplData.TestResults[0].TestResults[1].TestName)
-	assertions.Equal("go-test-report", tmplData.TestResults[0].TestResults[1].Package)
+	assertions.Equal("package2", tmplData.TestResults[0].TestResults[1].Package)
 	assertions.Equal(true, tmplData.TestResults[0].TestResults[1].Passed)
-	assertions.Empty(tmplData.TestResults[0].TestResults[1].TestFileName)
-	assertions.Equal(0, tmplData.TestResults[0].TestResults[1].TestFunctionDetail.Col)
-	assertions.Equal(0, tmplData.TestResults[0].TestResults[1].TestFunctionDetail.Line)
+	assertions.Equal("sample2.go", tmplData.TestResults[0].TestResults[1].TestFileName)
+	assertions.Equal(17, tmplData.TestResults[0].TestResults[1].TestFunctionDetail.Col)
+	assertions.Equal(784, tmplData.TestResults[0].TestResults[1].TestFunctionDetail.Line)
 
 	assertions.Equal("TestFunc3", tmplData.TestResults[1].TestResults[0].TestName)
 	assertions.Equal("go-test-report", tmplData.TestResults[1].TestResults[0].Package)
