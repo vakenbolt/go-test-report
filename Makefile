@@ -9,7 +9,6 @@ buildall: genbuild
 
 	mkdir -p release_builds/linux-amd64/
 	mkdir -p release_builds/darwin-amd64/
-	mkdir -p release_builds/windows-i386/
 	mkdir -p release_builds/windows-amd64/
 
 	echo "Linux 64bit"
@@ -17,9 +16,6 @@ buildall: genbuild
 
 	echo "Darwin (MacOS) 64bit"
 	GOOS=darwin GOARCH=amd64 go build -o release_builds/darwin-amd64/
-
-	echo "Windows 32bit"
-	GOOS=windows GOARCH=386 go build -o release_builds/windows-i386/
 
 	echo "Windows 64bit"
 	GOOS=windows GOARCH=amd64 go build -o release_builds/windows-amd64/
