@@ -127,10 +127,10 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			stdinScanner := bufio.NewScanner(stdin)
 			testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
 			reportFileWriter := bufio.NewWriter(testReportHTMLTemplateFile)
-			defer func()  {
+			defer func() {
 				_ = stdin.Close()
 				if err := reportFileWriter.Flush(); err != nil {
-					e  = err
+					e = err
 				}
 				if err := testReportHTMLTemplateFile.Close(); err != nil {
 					e = err
