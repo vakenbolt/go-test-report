@@ -20,12 +20,5 @@ RUN npm install
 RUN npm fund
 RUN npm run test
 
-# WORKDIR /home/dockeruser/embed_assets
-# RUN go build
-# RUN ./embed_assets
-
-
-# WORKDIR /home/dockeruser
-
-RUN ./generate_embedded_go_code.sh
+RUN make genbuild
 RUN go test -v

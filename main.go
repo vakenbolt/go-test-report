@@ -15,6 +15,7 @@ import (
 	"html/template"
 	"os"
 	"os/exec"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -111,7 +112,7 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	rootCmd := &cobra.Command{
 		Use:  "go-test-report",
 		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) (e error) {
 			startTime := time.Now()
 			if err := parseSizeFlag(tmplData, flags); err != nil {
 				return err
@@ -119,7 +120,23 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
-			if err := generateTestReport(flags, tmplData, cmd); err != nil {
+			if err := checkIfStdinIsPiped(); err != nil {
+				return err
+			}
+			stdin := os.Stdin
+			stdinScanner := bufio.NewScanner(stdin)
+			testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
+			reportFileWriter := bufio.NewWriter(testReportHTMLTemplateFile)
+			defer func()  {
+				_ = stdin.Close()
+				if err := reportFileWriter.Flush(); err != nil {
+					e  = err
+				}
+				if err := testReportHTMLTemplateFile.Close(); err != nil {
+					e = err
+				}
+			}()
+			if err := generateReport(stdinScanner, flags, tmplData, reportFileWriter, cmd); err != nil {
 				return errors.New(err.Error() + "\n")
 			}
 			elapsedTime := time.Since(startTime)
@@ -171,23 +188,12 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	return rootCmd, tmplData, flags
 }
 
-func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Command) error {
-	stdin := os.Stdin
-	if err := checkIfStdinIsPiped(); err != nil {
-		return err
-	}
-
+func generateReport(stdinScanner *bufio.Scanner, flags *cmdFlags, tmplData *TemplateData, reportFileWriter *bufio.Writer, cmd *cobra.Command) (e error) {
 	var err error
 	var allTests = map[string]*TestStatus{}
 	var allPackageNames = map[string]*types.Nil{}
 
 	// read from stdin and parse "go test" results
-	defer func() {
-		if err = stdin.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	stdinScanner := bufio.NewScanner(stdin)
 	startTestTime := time.Now()
 	for stdinScanner.Scan() {
 		stdinScanner.Text()
@@ -229,7 +235,7 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 	// used to the location of test functions in test go files by package and test function name.
 	testFileDetailByPackage, err := getPackageDetails(allPackageNames)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// read the html template from the generated embedded asset go file
@@ -241,17 +247,6 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 	if tpl, err := tpl.Parse(string(testReportHtmlTemplateStr)); err != nil {
 		return err
 	} else {
-		testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
-		w := bufio.NewWriter(testReportHTMLTemplateFile)
-		defer func() {
-			if err := w.Flush(); err != nil {
-				panic(err)
-			}
-			if err := testReportHTMLTemplateFile.Close(); err != nil {
-				panic(err)
-			}
-		}()
-
 		// read Javascript code from the generated embedded asset go file
 		testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
 		if err != nil {
@@ -264,7 +259,14 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 		tgCounter := 0
 		tgId := 0
 
-		for _, status := range allTests {
+		// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
+		var testNames []string
+		for test := range allTests {
+			testNames = append(testNames, test)
+		}
+		sort.Strings(testNames)
+		for _, testName := range testNames {
+			status := allTests[testName]
 			if len(tmplData.TestResults) == tgId {
 				tmplData.TestResults = append(tmplData.TestResults, &TestGroupData{})
 			}
@@ -292,8 +294,9 @@ func generateTestReport(flags *cmdFlags, tmplData *TemplateData, cmd *cobra.Comm
 		td := time.Now()
 		tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d %02d:%02d:%02d",
 			td.Month(), td.Day(), td.Year(), td.Hour(), td.Minute(), td.Second())
-
-		err = tpl.Execute(w, tmplData)
+		if err := tpl.Execute(reportFileWriter, tmplData); err != nil {
+			return err
+		}
 	}
 	return nil
 }
