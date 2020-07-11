@@ -110,6 +110,15 @@ To change the default title shown in the `test_report.html` file.
 $ go test -json | go-test-report -t "My Test Report"
 ```
 
+
+The default number of tests in a _test group_ can be changed using the `-g` or `--groupSize` flag. For example, the following command will change the default number of tests in a group to 8.
+
+```bash
+$ go test -json | go-test-report -g 8
+```
+
+
+
 Use the `-s` or `--size` flag to change the default size of the _group size indicator_. For example, the following command will set both the width and height of the size of the indicator to 48 pixels. 
 
 ```bash
