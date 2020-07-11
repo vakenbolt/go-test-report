@@ -216,3 +216,48 @@ func TestGenerateReport(t *testing.T) {
 	assertions.Equal(0, tmplData.TestResults[1].TestResults[0].TestFunctionDetail.Col)
 	assertions.Equal(0, tmplData.TestResults[1].TestResults[0].TestFunctionDetail.Line)
 }
+
+func TestParseSizeFlagIfValueIsNotInteger(t *testing.T) {
+	assertions := assert.New(t)
+	tmplData := &TemplateData{}
+	flags := &cmdFlags{
+		sizeFlag: "x",
+	}
+	err := parseSizeFlag(tmplData, flags)
+	assertions.Error(err)
+	assertions.Equal(err.Error(), `strconv.Atoi: parsing "": invalid syntax`)
+
+}
+
+func TestParseSizeFlagIfWidthValueIsNotInteger(t *testing.T) {
+	assertions := assert.New(t)
+	tmplData := &TemplateData{}
+	flags := &cmdFlags{
+		sizeFlag: "Bx27",
+	}
+	err := parseSizeFlag(tmplData, flags)
+	assertions.Error(err)
+	assertions.Equal(err.Error(), `strconv.Atoi: parsing "b": invalid syntax`)
+}
+
+func TestParseSizeFlagIfHeightValueIsNotInteger(t *testing.T) {
+	assertions := assert.New(t)
+	tmplData := &TemplateData{}
+	flags := &cmdFlags{
+		sizeFlag: "10xA",
+	}
+	err := parseSizeFlag(tmplData, flags)
+	assertions.Error(err)
+	assertions.Equal(err.Error(), `strconv.Atoi: parsing "a": invalid syntax`)
+}
+
+func TestParseSizeFlagIfMalformedSize(t *testing.T) {
+	assertions := assert.New(t)
+	tmplData := &TemplateData{}
+	flags := &cmdFlags{
+		sizeFlag: "10xx19",
+	}
+	err := parseSizeFlag(tmplData, flags)
+	assertions.Error(err)
+	assertions.Equal(err.Error(), `malformed size value; only one x is allowed if specifying with and height`)
+}
