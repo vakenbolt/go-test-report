@@ -75,12 +75,6 @@ To view the output of a related test, click on the title of a test on the list. 
 	<img src="https://user-images.githubusercontent.com/1223459/87218282-d9438880-c316-11ea-9a81-54d4cd5b6d85.png" width="700px" style="border: 1px #cccccc solid; padding: 8px">
 </p>
 
-<p align="center">
-	<img src="https://user-images.githubusercontent.com/1223459/87219000-58d45600-c31d-11ea-92ad-8cea2792204b.png" width="700px" style="border: 1px #cccccc solid; padding: 8px">
-	<br/>
-	<br/>	
-</p>
-
 
 ## Configuration
 Additional configuration options are available via command-line flags.
