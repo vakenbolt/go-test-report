@@ -1,8 +1,8 @@
-gencode:
-	(cd embed_assets/;set -e;go build;./embed_assets)
-
 genbuild: gencode
 	go build
+	
+gencode:
+	(cd embed_assets/;set -e;go build;./embed_assets)
 
 buildall: genbuild
 	echo "Building..."
