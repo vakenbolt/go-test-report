@@ -124,13 +124,13 @@ $ go test -json | go-test-report -g 32x16
 
 ## Building from source
 
-GNU make is used as the main build automation tool for go-test-report. MacOS users may need to upgrade their current version of `make` to the latest version. This is easily accomplished with _homebrew_.
+GNU make is used as the main build automation tool for go-test-report. MacOS users may need to upgrade their local `make` to the latest version using [homebrew](https://brew.sh/).
 
 ```bash
 $ brew install homebrew/core/make
 ```
 
-> Once the update is complete `make` will become `gmake`
+> After the update is complete `make` will become `gmake`
 
 To build `go-test-report` from source.
 
