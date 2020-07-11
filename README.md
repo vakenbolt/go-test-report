@@ -124,23 +124,31 @@ $ go test -json | go-test-report -g 32x16
 
 ## Building from source
 
+GNU make is used as the main build automation tool for go-test-report. MacOS users may need to upgrade their local `make` to the latest version using [homebrew](https://brew.sh/).
+
+```bash
+$ brew install homebrew/core/make
+```
+
+> After the update is complete `make` will become `gmake`
+
 To build `go-test-report` from source.
 
 ```bash
-$ make genbuild
+$ gmake genbuild
 ```
 
 Because `go-test-report` embeds the HTML and Javascript code necessary to generate the report output file, a command to generate the embedded go code is needed. 
 
 ```bash
-$ make gencode
+$ gmake gencode
 ```
 > Alternatively, `make genbuild` can be used which automatically runs `gencode` _before_ `genbuild`
 
 To build release binaries,
 
 ```bash
-$ make buildall
+$ gmake buildall
 ```
 > Creates a folder in the root project folder called `release_builds` that contains builds for the following platforms:
 > 

@@ -306,10 +306,12 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsBy
 	var out bytes.Buffer
 	var cmd *exec.Cmd
 	testFileDetailByPackage := TestFileDetailsByPackage{}
+	stringReader := strings.NewReader("")
 	for packageName := range allPackageNames {
 		cmd = exec.Command("go", "list", "-json", packageName)
 		out.Reset()
-		cmd.Stdin = strings.NewReader("")
+		stringReader.Reset("")
+		cmd.Stdin = stringReader
 		cmd.Stdout = &out
 		err := cmd.Run()
 		if err != nil {
