@@ -1,6 +1,6 @@
 <p align="center">
 	<br/>
-    <img src="https://user-images.githubusercontent.com/1223459/87217122-ae076c00-c30b-11ea-9432-e77a64b5847c.png"  width="700px">
+    <img src="https://user-images.githubusercontent.com/1223459/87218719-d185e300-c31a-11ea-897b-0db31b956ff1.png"  width="700px">
 	<br/>
 	<br/>	
 </p>
@@ -61,12 +61,30 @@ To view the tests in a particular test group, click on any of the test group ind
 
 To view the output of a related test, click on the title of a test on the list. If you want to view _all_ of the output data, simultaneously press `shift` and the test group indicator.
 
+
 <p align="center">
 	<br/>
 	<img src="https://user-images.githubusercontent.com/1223459/87218282-d9438880-c316-11ea-9a81-54d4cd5b6d85.png" width="700px" style="border: 1px #cccccc solid; padding: 8px">
 	<br/>
 	<br/>	
 </p>
+
+
+<p align="center">
+	<br/>
+	<img src="https://user-images.githubusercontent.com/1223459/87218926-c9c73e00-c31c-11ea-9834-057d92de98bd.png" width="216px" style="border: 1px #cccccc solid; padding: 8px">
+	<br/>
+	<br/>	
+</p>
+
+
+<p align="center">
+	<br/>
+	<img src="https://user-images.githubusercontent.com/1223459/87219000-58d45600-c31d-11ea-92ad-8cea2792204b.png" width="700px" style="border: 1px #cccccc solid; padding: 8px">
+	<br/>
+	<br/>	
+</p>
+
 
 ## Configuration
 Additional configuration options are available via command-line flags.
@@ -146,7 +164,7 @@ $ ./build_release.sh
 ## Contribute & Support
 
 - Add a GitHub Star
-- Suggest [new features, ideas and optimizations](issues)
-- [Report issues](issues)
+- Suggest [new features, ideas and optimizations](https://github.com/vakenbolt/go-test-report/issues)
+- [Report issues](https://github.com/vakenbolt/go-test-report/issues)
 
 
