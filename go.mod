@@ -4,6 +4,8 @@ go 1.13
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/fzipp/gocyclo v0.0.0-20150627053110-6acd4345c835 // indirect
+	github.com/gojp/goreportcard v0.0.0-20200415071653-59167b516f3f // indirect
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect

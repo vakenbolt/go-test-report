@@ -100,13 +100,13 @@ type (
 )
 
 func main() {
-	rootCmd, _, _ := newRootCommand()
+	rootCmd, _, _ := initRootCommand()
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
-func newRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
+func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 	flags := &cmdFlags{}
 	tmplData := &templateData{}
 	rootCmd := &cobra.Command{
@@ -136,9 +136,18 @@ func newRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 					e = err
 				}
 			}()
-			if err := generateReport(getPackageDetails, stdinScanner, flags, tmplData, reportFileWriter, cmd); err != nil {
+			startTestTime := time.Now()
+			allPackageNames, allTests, err := generateReport(stdinScanner, flags, cmd)
+			if err != nil {
 				return errors.New(err.Error() + "\n")
 			}
+			elapsedTestTime := time.Since(startTestTime)
+			// used to the location of test functions in test go files by package and test function name.
+			testFileDetailByPackage, err := getPackageDetails(allPackageNames)
+			if err != nil {
+				return err
+			}
+			err = foobar(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
 			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
@@ -188,26 +197,24 @@ func newRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 	return rootCmd, tmplData, flags
 }
 
-func generateReport(getPackageDetails func(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error),
-	stdinScanner *bufio.Scanner, flags *cmdFlags, tmplData *templateData, reportFileWriter *bufio.Writer, cmd *cobra.Command) (e error) {
-	var err error
-	var allTests = map[string]*testStatus{}
-	var allPackageNames = map[string]*types.Nil{}
+// getPackageDetails func(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error)
+func generateReport(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *cobra.Command) (allPackageNames map[string]*types.Nil, allTests map[string]*testStatus, e error) {
+	allTests = map[string]*testStatus{}
+	allPackageNames = map[string]*types.Nil{}
 
 	// read from stdin and parse "go test" results
-	startTestTime := time.Now()
 	for stdinScanner.Scan() {
 		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
 		if flags.verbose {
 			newline := []byte("\n")
 			if _, err := cmd.OutOrStdout().Write(append(lineInput, newline[0])); err != nil {
-				return err
+				return nil, nil, err
 			}
 		}
 		goTestOutputRow := &goTestOutputRow{}
 		if err := json.Unmarshal(lineInput, goTestOutputRow); err != nil {
-			return err
+			return nil, nil, err
 		}
 		if goTestOutputRow.TestName != "" {
 			var status *testStatus
@@ -231,14 +238,10 @@ func generateReport(getPackageDetails func(allPackageNames map[string]*types.Nil
 			status.Output = append(status.Output, goTestOutputRow.Output)
 		}
 	}
-	elapsedTestTime := time.Since(startTestTime)
+	return allPackageNames, allTests, nil
+}
 
-	// used to the location of test functions in test go files by package and test function name.
-	testFileDetailByPackage, err := getPackageDetails(allPackageNames)
-	if err != nil {
-		return err
-	}
-
+func foobar(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
 	// read the html template from the generated embedded asset go file
 	tpl := template.New("test_report.html.template")
 	testReportHTMLTemplateStr, err := hex.DecodeString(testReportHTMLTemplate)
