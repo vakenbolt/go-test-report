@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestVersionCommand(t *testing.T) {
@@ -139,8 +143,7 @@ func TestGroupOutputFlagIfMissingValue(t *testing.T) {
 	assertions.Equal(rootCmdErr.Error(), `flag needs an argument: --output`)
 }
 
-/*
-func TestGenerateReport(t *testing.T) {
+func TestReadTestDataFromStdIn(t *testing.T) {
 	assertions := assert.New(t)
 	flags := &cmdFlags{}
 	data := `{"Time":"2020-07-10T01:24:44.269511-05:00","Action":"run","Package":"go-test-report","Test":"TestFunc1"}
@@ -153,10 +156,55 @@ func TestGenerateReport(t *testing.T) {
 {"Time":"2020-07-10T01:24:44.270311-05:00","Action":"pass","Package":"package2","Test":"TestFunc2","Elapsed":0.25}
 {"Time":"2020-07-10T01:24:44.269511-05:00","Action":"run","Package":"go-test-report","Test":"TestFunc3"}
 {"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"=== RUN   TestFunc3\n"}
+{"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"sample output\n"}
 {"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"go-test-report","Test":"TestFunc3","Output":"--- FAIL: TestFunc3 (0.00s)\n"}
 {"Time":"2020-07-10T01:24:44.270311-05:00","Action":"fail","Package":"go-test-report","Test":"TestFunc3","Elapsed":0}
 `
 	stdinScanner := bufio.NewScanner(strings.NewReader(data))
+	cmd := &cobra.Command{}
+	allPackageNames, allTests, err := readTestDataFromStdIn(stdinScanner, flags, cmd)
+	assertions.Nil(err)
+	assertions.Len(allPackageNames, 2)
+	assertions.Contains(allPackageNames, "go-test-report")
+	assertions.Contains(allPackageNames, "package2")
+	assertions.Len(allTests, 3)
+	assertions.Contains(allTests, "TestFunc1")
+	assertions.Contains(allTests, "TestFunc2")
+	assertions.Contains(allTests, "TestFunc3")
+
+	val := allTests["TestFunc1"]
+	assertions.True(val.Passed)
+	assertions.Equal("TestFunc1", val.TestName)
+	assertions.Equal(1.25, val.ElapsedTime)
+	assertions.Len(val.Output, 4)
+	assertions.Equal("=== RUN   TestFunc1\n", val.Output[1])
+	assertions.Equal("--- PASS: TestFunc1 (1.25s)\n", val.Output[2])
+	assertions.Equal(0, val.TestFunctionDetail.Line)
+	assertions.Equal(0, val.TestFunctionDetail.Col)
+
+	val = allTests["TestFunc2"]
+	assertions.True(val.Passed)
+	assertions.Equal("TestFunc2", val.TestName)
+	assertions.Equal(0.25, val.ElapsedTime)
+	assertions.Len(val.Output, 4)
+	assertions.Equal("=== RUN   TestFunc2\n", val.Output[1])
+	assertions.Equal("--- PASS: TestFunc2 (0.25s)\n", val.Output[2])
+	assertions.Equal(0, val.TestFunctionDetail.Line)
+	assertions.Equal(0, val.TestFunctionDetail.Col)
+
+	val = allTests["TestFunc3"]
+	assertions.False(val.Passed)
+	assertions.Equal("TestFunc3", val.TestName)
+	assertions.Equal(0.00, val.ElapsedTime)
+	assertions.Len(val.Output, 5)
+	assertions.Equal("=== RUN   TestFunc3\n", val.Output[1])
+	assertions.Equal("--- FAIL: TestFunc3 (0.00s)\n", val.Output[3])
+	assertions.Equal(0, val.TestFunctionDetail.Line)
+	assertions.Equal(0, val.TestFunctionDetail.Col)
+}
+
+func TestGenerateReport(t *testing.T) {
+	assertions := assert.New(t)
 	tmplData := &templateData{
 		TestResultGroupIndicatorWidth:  "20px",
 		TestResultGroupIndicatorHeight: "16px",
@@ -164,29 +212,61 @@ func TestGenerateReport(t *testing.T) {
 		numOfTestsPerGroup:             2,
 		OutputFilename:                 "test-output-report.html",
 	}
-	cmd := &cobra.Command{}
-	writer := bufio.NewWriter(&bytes.Buffer{})
-	getPackageDetails := func(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error) {
-		m := testFileDetailsByPackage{}
-		m["go-test-report"] = map[string]*testFileDetail{}
-		m["go-test-report"]["TestFunc1"] = &testFileDetail{
-			FileName: "sample1.go",
-			TestFunctionFilePos: testFunctionFilePos{
-				Line: 101,
-				Col:  1,
-			},
-		}
-		m["package2"] = map[string]*testFileDetail{}
-		m["package2"]["TestFunc2"] = &testFileDetail{
-			FileName: "sample2.go",
-			TestFunctionFilePos: testFunctionFilePos{
-				Line: 784,
-				Col:  17,
-			},
-		}
-		return m, nil
+	allTests := map[string]*testStatus{}
+	allTests["TestFunc1"] = &testStatus{
+		TestName:           "TestFunc1",
+		Package:            "go-test-report",
+		ElapsedTime:        0,
+		Output:             nil,
+		Passed:             true,
+		TestFileName:       "",
+		TestFunctionDetail: testFunctionFilePos{},
 	}
-	err := generateReport(getPackageDetails, stdinScanner, flags, tmplData, writer, cmd)
+	allTests["TestFunc2"] = &testStatus{
+		TestName:     "TestFunc2",
+		Package:      "package2",
+		ElapsedTime:  0,
+		Output:       nil,
+		Passed:       true,
+		TestFileName: "",
+
+		TestFunctionDetail: testFunctionFilePos{},
+	}
+	allTests["TestFunc3"] = &testStatus{
+		TestName:           "TestFunc3",
+		Package:            "go-test-report",
+		ElapsedTime:        0,
+		Output:             nil,
+		Passed:             false,
+		TestFileName:       "",
+		TestFunctionDetail: testFunctionFilePos{},
+	}
+	testFileDetailsByPackage := testFileDetailsByPackage{}
+	testFileDetailsByPackage["go-test-report"] = map[string]*testFileDetail{}
+	testFileDetailsByPackage["go-test-report"]["TestFunc1"] = &testFileDetail{
+		FileName: "sample_file_1.go",
+		TestFunctionFilePos: testFunctionFilePos{
+			Line: 101,
+			Col:  1,
+		},
+	}
+	testFileDetailsByPackage["package2"] = map[string]*testFileDetail{}
+	testFileDetailsByPackage["package2"]["TestFunc2"] = &testFileDetail{
+		FileName: "sample_file_2.go",
+		TestFunctionFilePos: testFunctionFilePos{
+			Line: 784,
+			Col:  17,
+		},
+	}
+	testFileDetailsByPackage["go-test-report"]["TestFunc3"] = &testFileDetail{
+		TestFunctionFilePos: testFunctionFilePos{
+			Line: 0,
+			Col:  0,
+		},
+	}
+	elapsedTestTime := 3 * time.Second
+	writer := bufio.NewWriter(&bytes.Buffer{})
+	err := generateReport(tmplData, allTests, testFileDetailsByPackage, elapsedTestTime, writer)
 	assertions.Nil(err)
 	assertions.Equal(2, tmplData.NumOfTestPassed)
 	assertions.Equal(1, tmplData.NumOfTestFailed)
@@ -195,14 +275,14 @@ func TestGenerateReport(t *testing.T) {
 	assertions.Equal("TestFunc1", tmplData.TestResults[0].TestResults[0].TestName)
 	assertions.Equal("go-test-report", tmplData.TestResults[0].TestResults[0].Package)
 	assertions.Equal(true, tmplData.TestResults[0].TestResults[0].Passed)
-	assertions.Equal("sample1.go", tmplData.TestResults[0].TestResults[0].TestFileName)
+	assertions.Equal("sample_file_1.go", tmplData.TestResults[0].TestResults[0].TestFileName)
 	assertions.Equal(1, tmplData.TestResults[0].TestResults[0].TestFunctionDetail.Col)
 	assertions.Equal(101, tmplData.TestResults[0].TestResults[0].TestFunctionDetail.Line)
 
 	assertions.Equal("TestFunc2", tmplData.TestResults[0].TestResults[1].TestName)
 	assertions.Equal("package2", tmplData.TestResults[0].TestResults[1].Package)
 	assertions.Equal(true, tmplData.TestResults[0].TestResults[1].Passed)
-	assertions.Equal("sample2.go", tmplData.TestResults[0].TestResults[1].TestFileName)
+	assertions.Equal("sample_file_2.go", tmplData.TestResults[0].TestResults[1].TestFileName)
 	assertions.Equal(17, tmplData.TestResults[0].TestResults[1].TestFunctionDetail.Col)
 	assertions.Equal(784, tmplData.TestResults[0].TestResults[1].TestFunctionDetail.Line)
 
@@ -258,4 +338,3 @@ func TestParseSizeFlagIfMalformedSize(t *testing.T) {
 	assertions.Error(err)
 	assertions.Equal(err.Error(), `malformed size value; only one x is allowed if specifying with and height`)
 }
-*/

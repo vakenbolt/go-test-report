@@ -11,11 +11,13 @@
 [![version: 0.9](https://img.shields.io/badge/version-0.9.0-default.svg)](https://shields.io/)
 [![version: 0.9](https://img.shields.io/badge/platforms-macos%20|%20linux%20|%20windows-orange.svg)](https://shields.io/)
 
-go-test-report captures `go test` output and parses it into a _single_ self-contained HTML file. 
+`go-test-report` captures `go test` output and parses it into a _single_ self-contained HTML file. 
 
 ## Installation
 
-Install the go binary using `go get`
+Install the go binary using `go get`.
+
+> **NOTE:** You'll have to add the `bin` folder from go's workspace directory to the exported `PATH` variable in your shell. The default workspace folder is a directory that is named go within your user home directory (`~/go` for Linux and MacOS, `%USERPROFILE%/go` for Windows).
 
 ```shell
 $ go get -u github.com/vakenbolt/go-test-report/
