@@ -10,6 +10,7 @@
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://shields.io/)
 [![version: 0.9](https://img.shields.io/badge/version-0.9.0-default.svg)](https://shields.io/)
 [![version: 0.9](https://img.shields.io/badge/platforms-macos%20|%20linux%20|%20windows-orange.svg)](https://shields.io/)
+[![goreportcard](https://goreportcard.com/badge/github.com/vakenbolt/go-test-report)](https://goreportcard.com/report/github.com/vakenbolt/go-test-report)
 
 `go-test-report` captures `go test` output and parses it into a _single_ self-contained HTML file. 
 
