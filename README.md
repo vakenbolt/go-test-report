@@ -17,7 +17,8 @@
 
 Install the go binary using `go get`.
 
-> **NOTE:** You'll have to add the `bin` folder from go's workspace directory to the exported `PATH` variable in your shell. The default workspace folder is a directory that is named go within your user home directory (`~/go` for Linux and MacOS, `%USERPROFILE%/go` for Windows).
+> **NOTE:** To run the binary, add the `bin` folder from go's workspace directory to the exported `PATH` variable in your shell. The default workspace folder is a directory named go within your user home directory (`~/go` for Linux and macOS, `%USERPROFILE%/go` for Windows).
+
 
 ```shell
 $ go get -u github.com/vakenbolt/go-test-report/
