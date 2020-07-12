@@ -33,20 +33,20 @@ type (
 		Output   string
 	}
 
-	TestStatus struct {
+	testStatus struct {
 		TestName           string
 		Package            string
 		ElapsedTime        float64
 		Output             []string
 		Passed             bool
 		TestFileName       string
-		TestFunctionDetail TestFunctionFilePos
+		TestFunctionDetail testFunctionFilePos
 	}
 
-	TemplateData struct {
+	templateData struct {
 		TestResultGroupIndicatorWidth  string
 		TestResultGroupIndicatorHeight string
-		TestResults                    []*TestGroupData
+		TestResults                    []*testGroupData
 		NumOfTestPassed                int
 		NumOfTestFailed                int
 		NumOfTests                     int
@@ -58,9 +58,9 @@ type (
 		TestExecutionDate              string
 	}
 
-	TestGroupData struct {
+	testGroupData struct {
 		FailureIndicator string
-		TestResults      []*TestStatus
+		TestResults      []*testStatus
 	}
 
 	cmdFlags struct {
@@ -71,44 +71,44 @@ type (
 		verbose    bool
 	}
 
-	GoListJsonModule struct {
+	goListJSONModule struct {
 		Path string
 		Dir  string
 		Main bool
 	}
 
-	GoListJson struct {
+	goListJSON struct {
 		Dir         string
 		ImportPath  string
 		Name        string
 		GoFiles     []string
 		TestGoFiles []string
-		Module      GoListJsonModule
+		Module      goListJSONModule
 	}
 
-	TestFunctionFilePos struct {
+	testFunctionFilePos struct {
 		Line int
 		Col  int
 	}
 
-	TestFileDetail struct {
+	testFileDetail struct {
 		FileName            string
-		TestFunctionFilePos TestFunctionFilePos
+		TestFunctionFilePos testFunctionFilePos
 	}
 
-	TestFileDetailsByPackage map[string]map[string]*TestFileDetail
+	testFileDetailsByPackage map[string]map[string]*testFileDetail
 )
 
 func main() {
-	rootCmd, _, _ := newRootCommand()
+	rootCmd, _, _ := initRootCommand()
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
-func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
+func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 	flags := &cmdFlags{}
-	tmplData := &TemplateData{}
+	tmplData := &templateData{}
 	rootCmd := &cobra.Command{
 		Use:  "go-test-report",
 		Long: "Captures go test output via stdin and parses it into a single self-contained html file.",
@@ -136,9 +136,18 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 					e = err
 				}
 			}()
-			if err := generateReport(getPackageDetails, stdinScanner, flags, tmplData, reportFileWriter, cmd); err != nil {
+			startTestTime := time.Now()
+			allPackageNames, allTests, err := readTestDataFromStdIn(stdinScanner, flags, cmd)
+			if err != nil {
 				return errors.New(err.Error() + "\n")
 			}
+			elapsedTestTime := time.Since(startTestTime)
+			// used to the location of test functions in test go files by package and test function name.
+			testFileDetailByPackage, err := getPackageDetails(allPackageNames)
+			if err != nil {
+				return err
+			}
+			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
 			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
@@ -188,124 +197,53 @@ func newRootCommand() (*cobra.Command, *TemplateData, *cmdFlags) {
 	return rootCmd, tmplData, flags
 }
 
-func generateReport(getPackageDetails func(allPackageNames map[string]*types.Nil) (TestFileDetailsByPackage, error),
-	stdinScanner *bufio.Scanner, flags *cmdFlags, tmplData *TemplateData, reportFileWriter *bufio.Writer, cmd *cobra.Command) (e error) {
-	var err error
-	var allTests = map[string]*TestStatus{}
-	var allPackageNames = map[string]*types.Nil{}
+func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *cobra.Command) (allPackageNames map[string]*types.Nil, allTests map[string]*testStatus, e error) {
+	allTests = map[string]*testStatus{}
+	allPackageNames = map[string]*types.Nil{}
 
 	// read from stdin and parse "go test" results
-	startTestTime := time.Now()
 	for stdinScanner.Scan() {
 		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
 		if flags.verbose {
 			newline := []byte("\n")
 			if _, err := cmd.OutOrStdout().Write(append(lineInput, newline[0])); err != nil {
-				return err
+				return nil, nil, err
 			}
 		}
 		goTestOutputRow := &goTestOutputRow{}
 		if err := json.Unmarshal(lineInput, goTestOutputRow); err != nil {
-			return err
+			return nil, nil, err
 		}
 		if goTestOutputRow.TestName != "" {
-			var testStatus *TestStatus
+			var status *testStatus
 			if _, exists := allTests[goTestOutputRow.TestName]; !exists {
-				testStatus = &TestStatus{
+				status = &testStatus{
 					TestName: goTestOutputRow.TestName,
 					Package:  goTestOutputRow.Package,
 					Output:   []string{},
 				}
-				allTests[goTestOutputRow.TestName] = testStatus
+				allTests[goTestOutputRow.TestName] = status
 			} else {
-				testStatus = allTests[goTestOutputRow.TestName]
+				status = allTests[goTestOutputRow.TestName]
 			}
 			if goTestOutputRow.Action == "pass" || goTestOutputRow.Action == "fail" {
 				if goTestOutputRow.Action == "pass" {
-					testStatus.Passed = true
+					status.Passed = true
 				}
-				testStatus.ElapsedTime = goTestOutputRow.Elapsed
+				status.ElapsedTime = goTestOutputRow.Elapsed
 			}
 			allPackageNames[goTestOutputRow.Package] = nil
-			testStatus.Output = append(testStatus.Output, goTestOutputRow.Output)
+			status.Output = append(status.Output, goTestOutputRow.Output)
 		}
 	}
-	elapsedTestTime := time.Since(startTestTime)
-
-	// used to the location of test functions in test go files by package and test function name.
-	testFileDetailByPackage, err := getPackageDetails(allPackageNames)
-	if err != nil {
-		return err
-	}
-
-	// read the html template from the generated embedded asset go file
-	tpl := template.New("test_report.html.template")
-	testReportHtmlTemplateStr, err := hex.DecodeString(testReportHtmlTemplate)
-	if err != nil {
-		return err
-	}
-	if tpl, err := tpl.Parse(string(testReportHtmlTemplateStr)); err != nil {
-		return err
-	} else {
-		// read Javascript code from the generated embedded asset go file
-		testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
-		if err != nil {
-			return err
-		}
-
-		tmplData.NumOfTestPassed = 0
-		tmplData.NumOfTestFailed = 0
-		tmplData.JsCode = template.JS(testReportJsCodeStr)
-		tgCounter := 0
-		tgId := 0
-
-		// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
-		var testNames []string
-		for test := range allTests {
-			testNames = append(testNames, test)
-		}
-		sort.Strings(testNames)
-		for _, testName := range testNames {
-			status := allTests[testName]
-			if len(tmplData.TestResults) == tgId {
-				tmplData.TestResults = append(tmplData.TestResults, &TestGroupData{})
-			}
-			// add file info(name and position; line and col) associated with the test function
-			testFileInfo := testFileDetailByPackage[status.Package][status.TestName]
-			if testFileInfo != nil {
-				status.TestFileName = testFileInfo.FileName
-				status.TestFunctionDetail = testFileInfo.TestFunctionFilePos
-			}
-			tmplData.TestResults[tgId].TestResults = append(tmplData.TestResults[tgId].TestResults, status)
-			if !status.Passed {
-				tmplData.TestResults[tgId].FailureIndicator = "failed"
-				tmplData.NumOfTestFailed += 1
-			} else {
-				tmplData.NumOfTestPassed += 1
-			}
-			tgCounter += 1
-			if tgCounter == tmplData.numOfTestsPerGroup {
-				tgCounter = 0
-				tgId += 1
-			}
-		}
-		tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
-		tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
-		td := time.Now()
-		tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d %02d:%02d:%02d",
-			td.Month(), td.Day(), td.Year(), td.Hour(), td.Minute(), td.Second())
-		if err := tpl.Execute(reportFileWriter, tmplData); err != nil {
-			return err
-		}
-	}
-	return nil
+	return allPackageNames, allTests, nil
 }
 
-func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsByPackage, error) {
+func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error) {
 	var out bytes.Buffer
 	var cmd *exec.Cmd
-	testFileDetailByPackage := TestFileDetailsByPackage{}
+	testFileDetailByPackage := testFileDetailsByPackage{}
 	stringReader := strings.NewReader("")
 	for packageName := range allPackageNames {
 		cmd = exec.Command("go", "list", "-json", packageName)
@@ -317,13 +255,13 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsBy
 		if err != nil {
 			return nil, err
 		}
-		goListJson := &GoListJson{}
-		if err := json.Unmarshal(out.Bytes(), goListJson); err != nil {
+		goListJSON := &goListJSON{}
+		if err := json.Unmarshal(out.Bytes(), goListJSON); err != nil {
 			return nil, err
 		}
-		testFileDetailByPackage[packageName] = map[string]*TestFileDetail{}
-		for _, file := range goListJson.TestGoFiles {
-			sourceFilePath := fmt.Sprintf("%s/%s", goListJson.Dir, file)
+		testFileDetailByPackage[packageName] = map[string]*testFileDetail{}
+		for _, file := range goListJSON.TestGoFiles {
+			sourceFilePath := fmt.Sprintf("%s/%s", goListJSON.Dir, file)
 			fileSet := token.NewFileSet()
 			f, err := parser.ParseFile(fileSet, sourceFilePath, nil, 0)
 			if err != nil {
@@ -332,7 +270,7 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsBy
 			ast.Inspect(f, func(n ast.Node) bool {
 				switch x := n.(type) {
 				case *ast.FuncDecl:
-					testFileDetail := &TestFileDetail{}
+					testFileDetail := &testFileDetail{}
 					fileSetPos := fileSet.Position(n.Pos())
 					folders := strings.Split(fileSetPos.String(), "/")
 					fileNameWithPos := folders[len(folders)-1]
@@ -340,7 +278,7 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsBy
 					lineNum, _ := strconv.Atoi(fileDetails[1])
 					colNum, _ := strconv.Atoi(fileDetails[2])
 					testFileDetail.FileName = fileDetails[0]
-					testFileDetail.TestFunctionFilePos = TestFunctionFilePos{
+					testFileDetail.TestFunctionFilePos = testFunctionFilePos{
 						Line: lineNum,
 						Col:  colNum,
 					}
@@ -353,33 +291,96 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (TestFileDetailsBy
 	return testFileDetailByPackage, nil
 }
 
-func parseSizeFlag(tmplData *TemplateData, flags *cmdFlags) error {
+func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
+	// read the html template from the generated embedded asset go file
+	tpl := template.New("test_report.html.template")
+	testReportHTMLTemplateStr, err := hex.DecodeString(testReportHTMLTemplate)
+	if err != nil {
+		return err
+	}
+	tpl, err = tpl.Parse(string(testReportHTMLTemplateStr))
+	if err != nil {
+		return err
+	}
+	// read Javascript code from the generated embedded asset go file
+	testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
+	if err != nil {
+		return err
+	}
+
+	tmplData.NumOfTestPassed = 0
+	tmplData.NumOfTestFailed = 0
+	tmplData.JsCode = template.JS(testReportJsCodeStr)
+	tgCounter := 0
+	tgID := 0
+
+	// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
+	var testNames []string
+	for test := range allTests {
+		testNames = append(testNames, test)
+	}
+	sort.Strings(testNames)
+	for _, testName := range testNames {
+		status := allTests[testName]
+		if len(tmplData.TestResults) == tgID {
+			tmplData.TestResults = append(tmplData.TestResults, &testGroupData{})
+		}
+		// add file info(name and position; line and col) associated with the test function
+		testFileInfo := testFileDetailByPackage[status.Package][status.TestName]
+		if testFileInfo != nil {
+			status.TestFileName = testFileInfo.FileName
+			status.TestFunctionDetail = testFileInfo.TestFunctionFilePos
+		}
+		tmplData.TestResults[tgID].TestResults = append(tmplData.TestResults[tgID].TestResults, status)
+		if !status.Passed {
+			tmplData.TestResults[tgID].FailureIndicator = "failed"
+			tmplData.NumOfTestFailed++
+		} else {
+			tmplData.NumOfTestPassed++
+		}
+		tgCounter++
+		if tgCounter == tmplData.numOfTestsPerGroup {
+			tgCounter = 0
+			tgID++
+		}
+	}
+	tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
+	tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
+	td := time.Now()
+	tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d %02d:%02d:%02d",
+		td.Month(), td.Day(), td.Year(), td.Hour(), td.Minute(), td.Second())
+	if err := tpl.Execute(reportFileWriter, tmplData); err != nil {
+		return err
+	}
+	return nil
+}
+
+func parseSizeFlag(tmplData *templateData, flags *cmdFlags) error {
 	flags.sizeFlag = strings.ToLower(flags.sizeFlag)
 	if !strings.Contains(flags.sizeFlag, "x") {
-		if val, err := strconv.Atoi(flags.sizeFlag); err != nil {
+		val, err := strconv.Atoi(flags.sizeFlag)
+		if err != nil {
 			return err
-		} else {
-			tmplData.TestResultGroupIndicatorWidth = fmt.Sprintf("%dpx", val)
-			tmplData.TestResultGroupIndicatorHeight = fmt.Sprintf("%dpx", val)
-			return nil
 		}
+		tmplData.TestResultGroupIndicatorWidth = fmt.Sprintf("%dpx", val)
+		tmplData.TestResultGroupIndicatorHeight = fmt.Sprintf("%dpx", val)
+		return nil
 	}
 	if strings.Count(flags.sizeFlag, "x") > 1 {
 		return errors.New(`malformed size value; only one x is allowed if specifying with and height`)
-	} else {
-		a := strings.Split(flags.sizeFlag, "x")
-		if val, err := strconv.Atoi(a[0]); err != nil {
-			return err
-		} else {
-			tmplData.TestResultGroupIndicatorWidth = fmt.Sprintf("%dpx", val)
-		}
-		if val, err := strconv.Atoi(a[1]); err != nil {
-			return err
-		} else {
-			tmplData.TestResultGroupIndicatorHeight = fmt.Sprintf("%dpx", val)
-		}
-		return nil
 	}
+	a := strings.Split(flags.sizeFlag, "x")
+	valW, err := strconv.Atoi(a[0])
+	if err != nil {
+		return err
+	}
+	tmplData.TestResultGroupIndicatorWidth = fmt.Sprintf("%dpx", valW)
+	valH, err := strconv.Atoi(a[1])
+	if err != nil {
+		return err
+	}
+	tmplData.TestResultGroupIndicatorHeight = fmt.Sprintf("%dpx", valH)
+	return nil
 }
 
 func checkIfStdinIsPiped() error {
@@ -389,7 +390,6 @@ func checkIfStdinIsPiped() error {
 	}
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 		return nil
-	} else {
-		return errors.New("ERROR: missing ≪ stdin ≫ pipe")
 	}
+	return errors.New("ERROR: missing ≪ stdin ≫ pipe")
 }
