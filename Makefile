@@ -23,17 +23,17 @@ buildall: genbuild
 	go mod verify
 
 	echo "Linux 64bit"
-	GOOS=linux GOARCH=amd64 go build -o release_builds/linux-amd64/
+	GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o release_builds/linux-amd64/
 	(cd $(LIN_DIR); shasum -a 256 go-test-report |  cut -d ' ' -f 1 > $(LINUX).sha256)
 	(cd $(LIN_DIR); tar -czf $(LINUX).tgz go-test-report $(LINUX).sha256)
 
 	echo "Darwin (MacOS) 64bit"
-	GOOS=darwin GOARCH=amd64 go build -o release_builds/darwin-amd64/
+	GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o release_builds/darwin-amd64/
 	(cd $(MAC_DIR); shasum -a 256 go-test-report |  cut -d ' ' -f 1 > $(MACOS).sha256)
 	(cd $(MAC_DIR); tar -czf $(MACOS).tgz go-test-report $(MACOS).sha256)
 
 	echo "Windows 64bit"
-	GOOS=windows GOARCH=amd64 go build -o release_builds/windows-amd64/
+	GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$(VERSION)" -o release_builds/windows-amd64/
 	(cd $(WIN_DIR); shasum -a 256 go-test-report.exe |  cut -d ' ' -f 1 > $(WINDOWS).sha256)
 	(cd $(WIN_DIR); zip -r $(WINDOWS).zip go-test-report.exe $(WINDOWS).sha256)
 
