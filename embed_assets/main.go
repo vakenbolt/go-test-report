@@ -32,5 +32,5 @@ func main() {
 	_, _ = writer.WriteString(fmt.Sprintf("package main\n\nvar testReportHTMLTemplate = `%s`", string(dst)))
 	dst = make([]byte, hex.EncodedLen(len(jsCode)))
 	hex.Encode(dst, jsCode)
-	_, _ = writer.WriteString(fmt.Sprintf("\n\nvar testReportJsCode = `%s`", string(dst)))
+	_, _ = writer.WriteString(fmt.Sprintf("\n\nvar testReportJsCode = `%s`\n", string(dst)))
 }
