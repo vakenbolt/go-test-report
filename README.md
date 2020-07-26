@@ -158,6 +158,13 @@ $ gmake gencode
 ```
 > Alternatively, `make genbuild` can be used which automatically runs `gencode` _before_ `genbuild`
 
+
+To build the testing container _(This is the same docker image used during build automation)_:
+
+```bash
+$gmake dockertest
+```
+
 To build release binaries,
 
 ```bash
