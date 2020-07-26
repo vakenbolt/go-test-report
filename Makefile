@@ -17,6 +17,8 @@ buildall: genbuild
 	mkdir -p release_builds/darwin-amd64/
 	mkdir -p release_builds/windows-amd64/
 
+	go mod verify
+
 	echo "Linux 64bit"
 	GOOS=linux GOARCH=amd64 go build -o release_builds/linux-amd64/
 	(cd release_builds/linux-amd64/; shasum -a 256 go-test-report |  cut -d ' ' -f 1 > $(LINUX).sha256)
