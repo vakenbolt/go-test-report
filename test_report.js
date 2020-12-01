@@ -131,8 +131,8 @@ window.GoTestReport = function (elements) {
         if (testOutputDiv == null) {
           const testOutputDiv = document.createElement('div')
           testOutputDiv.classList.add('testOutput')
-          const consoleSpan = document.createElement('span')
-          consoleSpan.classList.add('console')
+          const consolePre = document.createElement('pre')
+          consolePre.classList.add('console')
           const testDetailDiv = document.createElement('div')
           testDetailDiv.classList.add('testDetail')
           const packageNameDiv = document.createElement('div')
@@ -149,16 +149,16 @@ window.GoTestReport = function (elements) {
           }
           testDetailDiv.insertAdjacentElement('beforeend', packageNameDiv)
           testDetailDiv.insertAdjacentElement('beforeend', testFileNameDiv)
-          testOutputDiv.insertAdjacentElement('afterbegin', consoleSpan)
+          testOutputDiv.insertAdjacentElement('afterbegin', consolePre)
           testOutputDiv.insertAdjacentElement('beforeend', testDetailDiv)
           target.insertAdjacentElement('beforeend', testOutputDiv)
 
           if (testStatus.Passed) {
-            consoleSpan.classList.remove('failed')
+            consolePre.classList.remove('failed')
           } else {
-            consoleSpan.classList.add('failed')
+            consolePre.classList.add('failed')
           }
-          consoleSpan.textContent = testStatus.Output.join('')
+          consolePre.textContent = testStatus.Output.join('')
         } else {
           testOutputDiv.remove()
         }
