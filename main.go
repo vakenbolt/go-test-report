@@ -203,7 +203,6 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 
 	// read from stdin and parse "go test" results
 	for stdinScanner.Scan() {
-		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
 		if flags.verbose {
 			newline := []byte("\n")
