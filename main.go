@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-var version string	// value gets injected at build time (see Makefile)
+var version string // value gets injected at build time (see Makefile)
 
 type (
 	goTestOutputRow struct {
