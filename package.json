@@ -17,9 +17,10 @@
   },
   "homepage": "https://github.com/vakenbolt/go-test-report#readme",
   "devDependencies": {
-    "jest": "^25.5.2"
+    "jest": "^26.6.3"
   },
   "dependencies": {
-    "@jest/globals": "^25.5.2"
+    "@jest/globals": "^26.6.2",
+    "node-notifier": ">=8.0.1"
   }
 }

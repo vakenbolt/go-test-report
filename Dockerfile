@@ -20,5 +20,6 @@ RUN npm install
 RUN npm fund
 RUN npm run test
 
+# Our Makefile version is GNU Make which alpine uses by default
 RUN make genbuild
 RUN go test -v

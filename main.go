@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-var version = "0.9"
+var version string // value gets injected at build time (see Makefile)
 
 type (
 	goTestOutputRow struct {
@@ -203,7 +203,6 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 
 	// read from stdin and parse "go test" results
 	for stdinScanner.Scan() {
-		stdinScanner.Text()
 		lineInput := stdinScanner.Bytes()
 		if flags.verbose {
 			newline := []byte("\n")

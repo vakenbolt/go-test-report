@@ -137,7 +137,7 @@ $ go test -json | go-test-report -g 32x16
 
 ## Building from source
 
-GNU make is used as the main build automation tool for go-test-report. MacOS users may need to upgrade their local `make` to the latest version using [homebrew](https://brew.sh/).
+[GNU make](https://www.gnu.org/software/make/) is used as the main build automation tool for go-test-report. MacOS users may need to upgrade their local `make` to the latest version using [homebrew](https://brew.sh/).
 
 ```bash
 $ brew install homebrew/core/make
@@ -158,6 +158,13 @@ $ gmake gencode
 ```
 > Alternatively, `make genbuild` can be used which automatically runs `gencode` _before_ `genbuild`
 
+
+To build the testing container _(This is the same docker image used during build automation)_:
+
+```bash
+$gmake dockertest
+```
+
 To build release binaries,
 
 ```bash
@@ -169,10 +176,14 @@ $ gmake buildall
 > - `linux/amd64`
 > - `windows/amd64`
 
+## Contributors
+
+[@quarckster](https://github.com/quarckster)
+
+
 ## Contribute & Support
 
 - Add a GitHub Star
 - Suggest [new features, ideas and optimizations](https://github.com/vakenbolt/go-test-report/issues)
 - [Report issues](https://github.com/vakenbolt/go-test-report/issues)
-
 
