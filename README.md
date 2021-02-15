@@ -176,10 +176,14 @@ $ gmake buildall
 > - `linux/amd64`
 > - `windows/amd64`
 
+## Contributors
+
+[@quarckster](https://github.com/quarckster)
+
+
 ## Contribute & Support
 
 - Add a GitHub Star
 - Suggest [new features, ideas and optimizations](https://github.com/vakenbolt/go-test-report/issues)
 - [Report issues](https://github.com/vakenbolt/go-test-report/issues)
-
 
