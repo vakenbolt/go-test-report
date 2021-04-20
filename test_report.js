@@ -5,6 +5,7 @@
  * @property {number} ElapsedTime
  * @property {Array.<string>} Output
  * @property {boolean} Passed
+ * @property {boolean} Skipped
  */
 class TestStatus {}
 
@@ -12,6 +13,7 @@ class TestStatus {}
  * @typedef TestGroupData
  * @type {object}
  * @property {string} FailureIndicator
+ * @property {string} SkippedIndicator
  * @property {Array.<TestStatus>}
  */
 class TestGroupData {}
@@ -95,10 +97,11 @@ window.GoTestReport = function (elements) {
       for (let i = 0; i < testResults.length; i++) {
         const testResult = /**@type {TestGroupData}*/ testResults[i]
         const testPassed = /**@type {boolean}*/ testResult.Passed
-        const testPassedStatus = /**@type {string}*/ (testPassed) ? '' : 'failed'
+        const testSkipped = /**@type {boolean}*/ testResult.Skipped
+        const testPassedStatus = /**@type {string}*/ (testPassed) ? '' : (testSkipped ? 'skipped' : 'failed')
         const testId = /**@type {string}*/ target.attributes['id'].value
         testGroupList += `<div class="testGroupRow ${testPassedStatus}" data-groupid="${testId}" data-index="${i}">
-        <span class="testStatus ${testPassedStatus}">${(testPassed) ? '&check' : '&cross'};</span>
+        <span class="testStatus ${testPassedStatus}">${(testPassed) ? '&check' : (testSkipped ? '&dash' : '&cross')};</span>
         <span class="testTitle">${testResult.TestName}</span>
         <span class="testDuration"><span>${testResult.ElapsedTime}s </span>⏱</span>
       </div>`
@@ -154,8 +157,13 @@ window.GoTestReport = function (elements) {
           target.insertAdjacentElement('beforeend', testOutputDiv)
 
           if (testStatus.Passed) {
+            consolePre.classList.remove('skipped')
+            consolePre.classList.remove('failed')
+          } else if (testStatus.Skipped) {
+            consolePre.classList.add('skipped')
             consolePre.classList.remove('failed')
           } else {
+            consolePre.classList.remove('skipped')
             consolePre.classList.add('failed')
           }
           consolePre.textContent = testStatus.Output.join('')

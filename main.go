@@ -39,6 +39,7 @@ type (
 		ElapsedTime        float64
 		Output             []string
 		Passed             bool
+		Skipped            bool
 		TestFileName       string
 		TestFunctionDetail testFunctionFilePos
 	}
@@ -49,6 +50,7 @@ type (
 		TestResults                    []*testGroupData
 		NumOfTestPassed                int
 		NumOfTestFailed                int
+		NumOfTestSkipped               int
 		NumOfTests                     int
 		TestDuration                   time.Duration
 		ReportTitle                    string
@@ -60,6 +62,7 @@ type (
 
 	testGroupData struct {
 		FailureIndicator string
+		SkippedIndicator string
 		TestResults      []*testStatus
 	}
 
@@ -226,9 +229,12 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 			} else {
 				status = allTests[goTestOutputRow.TestName]
 			}
-			if goTestOutputRow.Action == "pass" || goTestOutputRow.Action == "fail" {
+			if goTestOutputRow.Action == "pass" || goTestOutputRow.Action == "fail" || goTestOutputRow.Action == "skip" {
 				if goTestOutputRow.Action == "pass" {
 					status.Passed = true
+				}
+				if goTestOutputRow.Action == "skip" {
+					status.Skipped = true
 				}
 				status.ElapsedTime = goTestOutputRow.Elapsed
 			}
@@ -309,6 +315,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 
 	tmplData.NumOfTestPassed = 0
 	tmplData.NumOfTestFailed = 0
+	tmplData.NumOfTestSkipped = 0
 	tmplData.JsCode = template.JS(testReportJsCodeStr)
 	tgCounter := 0
 	tgID := 0
@@ -332,8 +339,13 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		}
 		tmplData.TestResults[tgID].TestResults = append(tmplData.TestResults[tgID].TestResults, status)
 		if !status.Passed {
-			tmplData.TestResults[tgID].FailureIndicator = "failed"
-			tmplData.NumOfTestFailed++
+			if (!status.Skipped) {
+				tmplData.TestResults[tgID].FailureIndicator = "failed"
+				tmplData.NumOfTestFailed++
+			} else {
+				tmplData.TestResults[tgID].SkippedIndicator = "skipped"
+				tmplData.NumOfTestSkipped++
+			}
 		} else {
 			tmplData.NumOfTestPassed++
 		}
@@ -343,7 +355,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 			tgID++
 		}
 	}
-	tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed
+	tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed + tmplData.NumOfTestSkipped
 	tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
 	td := time.Now()
 	tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d %02d:%02d:%02d",
