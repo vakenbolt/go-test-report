@@ -239,6 +239,9 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 				status.ElapsedTime = goTestOutputRow.Elapsed
 			}
 			allPackageNames[goTestOutputRow.Package] = nil
+			if strings.Contains(goTestOutputRow.Output, "--- PASS:") {
+				goTestOutputRow.Output = strings.TrimSpace(goTestOutputRow.Output)
+			}
 			status.Output = append(status.Output, goTestOutputRow.Output)
 		}
 	}
@@ -339,7 +342,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		}
 		tmplData.TestResults[tgID].TestResults = append(tmplData.TestResults[tgID].TestResults, status)
 		if !status.Passed {
-			if (!status.Skipped) {
+			if !status.Skipped {
 				tmplData.TestResults[tgID].FailureIndicator = "failed"
 				tmplData.NumOfTestFailed++
 			} else {
