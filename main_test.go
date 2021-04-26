@@ -241,6 +241,16 @@ func TestGenerateReport(t *testing.T) {
 		TestFileName:       "",
 		TestFunctionDetail: testFunctionFilePos{},
 	}
+	allTests["TestFunc4"] = &testStatus{
+		TestName:           "TestFunc4",
+		Package:            "go-test-report",
+		ElapsedTime:        0,
+		Output:             nil,
+		Passed:             false,
+		Skipped:            true,
+		TestFileName:       "",
+		TestFunctionDetail: testFunctionFilePos{},
+	}
 	testFileDetailsByPackage := testFileDetailsByPackage{}
 	testFileDetailsByPackage["go-test-report"] = map[string]*testFileDetail{}
 	testFileDetailsByPackage["go-test-report"]["TestFunc1"] = &testFileDetail{
@@ -270,7 +280,8 @@ func TestGenerateReport(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal(2, tmplData.NumOfTestPassed)
 	assertions.Equal(1, tmplData.NumOfTestFailed)
-	assertions.Equal(3, tmplData.NumOfTests)
+	assertions.Equal(1, tmplData.NumOfTestSkipped)
+	assertions.Equal(4, tmplData.NumOfTests)
 
 	assertions.Equal("TestFunc1", tmplData.TestResults[0].TestResults[0].TestName)
 	assertions.Equal("go-test-report", tmplData.TestResults[0].TestResults[0].Package)
