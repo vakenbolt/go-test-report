@@ -8,8 +8,8 @@
 
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://shields.io/)
-[![version: 0.9](https://img.shields.io/badge/version-0.9.0-default.svg)](https://shields.io/)
-[![version: 0.9](https://img.shields.io/badge/platforms-macos%20|%20linux%20|%20windows-orange.svg)](https://shields.io/)
+[![version: 0.9.2](https://img.shields.io/badge/version-0.9.2-default.svg)](https://shields.io/)
+[![platforms: macos,linux,windows](https://img.shields.io/badge/platforms-macos%20|%20linux%20|%20windows-orange.svg)](https://shields.io/)
 [![goreportcard](https://goreportcard.com/badge/github.com/vakenbolt/go-test-report)](https://goreportcard.com/report/github.com/vakenbolt/go-test-report)
 
 `go-test-report` captures `go test` output and parses it into a _single_ self-contained HTML file. 
@@ -178,7 +178,9 @@ $ gmake buildall
 
 ## Contributors
 
+[@afbjorklund](https://github.com/afbjorklund)
 [@quarckster](https://github.com/quarckster)
+[@vakenbolt](https://github.com/vakenbolt)
 
 
 ## Contribute & Support
