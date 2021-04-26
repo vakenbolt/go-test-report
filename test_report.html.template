@@ -50,6 +50,10 @@
             background: #6fca83;
         }
 
+        div.pageHeader div.testStats span.skipped {
+            background: #bababa;
+        }
+
         div.pageHeader div.testStats span.failed {
             background: #ff7676;
         }
@@ -106,6 +110,10 @@
             background-color: black !important;
         }
 
+        .testResultGroup.skipped {
+            border: 2px gray solid;
+        }
+
         .testResultGroup.failed {
             background-color: red;
         }
@@ -136,6 +144,10 @@
             pointer-events: none
         }
 
+        .cardContainer.testGroupList .testGroupRow span.testStatus.skipped {
+            color: gray;
+        }
+
         .cardContainer.testGroupList .testGroupRow span.testStatus.failed {
             color: red;
         }
@@ -158,6 +170,11 @@
         .cardContainer.testGroupList .testGroupRow {
             position: relative;
             border-left: 4px #43c143 solid;
+        }
+
+        .cardContainer.testGroupList .testGroupRow.skipped {
+            color: gray;
+            border-left: 4px gray solid;
         }
 
         .cardContainer.testGroupList .testGroupRow.failed {
@@ -194,6 +211,10 @@
             font-size: 0.8em;
         }
 
+        .cardContainer .console.skipped{
+            color: #d9d9d9;
+        }
+
         .cardContainer .console.failed {
             color: #ffb2b2;
         }
@@ -214,7 +235,9 @@
     <div class="testStats">
         <span class="total"><span class="indicator">&boxbox;</span> Total: <strong>{{.NumOfTests}}</strong>Duration: <strong>{{.TestDuration}}</strong>
         </span><span class="passed"><span class="indicator">&check;</span> Passed: <strong>{{.NumOfTestPassed}}</strong>
-        </span><span class="failed"><span class="indicator">&cross;</span> Failed: <strong>{{.NumOfTestFailed}}</strong></span>
+        </span><span class="skipped"><span class="indicator">&dash;</span> Skipped: <strong>{{.NumOfTestSkipped}}</strong>
+        </span><span class="failed"><span class="indicator">&cross;</span> Failed: <strong>{{.NumOfTestFailed}}</strong>
+        </span>
     </div>
     <span class="testGroupsTitle">Test Groups:</span>
     <span class="testExecutionDate">{{.TestExecutionDate}}</span>
@@ -223,7 +246,7 @@
     <div class="cardContainer">
         <div id="testResults">
             {{range $k, $v := .TestResults}}
-                <div class="testResultGroup {{.FailureIndicator}}" id="{{$k}}"></div>
+                <div class="testResultGroup {{.FailureIndicator}} {{.SkippedIndicator}}" id="{{$k}}"></div>
             {{end}}
         </div>
     </div>
