@@ -138,13 +138,10 @@
             font-size: 1.2em;
             font-weight: bold;
             color: #139e13;
-            pointer-events: none;
-            display: inline-block;
-            overflow: hidden;
-            float: left;
-            padding-top: 10px;
-            padding-left: 20px;
-            padding-right: 12px;
+            padding: 0 4px 0 24px;
+            position: relative;
+            top: -11px;
+            pointer-events: none
         }
 
         .cardContainer.testGroupList .testGroupRow span.testStatus.skipped {

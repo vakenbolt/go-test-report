@@ -178,7 +178,7 @@ func TestReadTestDataFromStdIn(t *testing.T) {
 	assertions.Equal(1.25, val.ElapsedTime)
 	assertions.Len(val.Output, 4)
 	assertions.Equal("=== RUN   TestFunc1\n", val.Output[1])
-	assertions.Equal("--- PASS: TestFunc1 (1.25s)", val.Output[2])
+	assertions.Equal("--- PASS: TestFunc1 (1.25s)\n", val.Output[2])
 	assertions.Equal(0, val.TestFunctionDetail.Line)
 	assertions.Equal(0, val.TestFunctionDetail.Col)
 
@@ -188,7 +188,7 @@ func TestReadTestDataFromStdIn(t *testing.T) {
 	assertions.Equal(0.25, val.ElapsedTime)
 	assertions.Len(val.Output, 4)
 	assertions.Equal("=== RUN   TestFunc2\n", val.Output[1])
-	assertions.Equal("--- PASS: TestFunc2 (0.25s)", val.Output[2])
+	assertions.Equal("--- PASS: TestFunc2 (0.25s)\n", val.Output[2])
 	assertions.Equal(0, val.TestFunctionDetail.Line)
 	assertions.Equal(0, val.TestFunctionDetail.Col)
 
