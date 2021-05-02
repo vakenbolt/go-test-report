@@ -217,15 +217,16 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 		}
 		if goTestOutputRow.TestName != "" {
 			var status *testStatus
-			if _, exists := allTests[goTestOutputRow.TestName]; !exists {
+			key := goTestOutputRow.TestName
+			if _, exists := allTests[key]; !exists {
 				status = &testStatus{
 					TestName: goTestOutputRow.TestName,
 					Package:  goTestOutputRow.Package,
 					Output:   []string{},
 				}
-				allTests[goTestOutputRow.TestName] = status
+				allTests[key] = status
 			} else {
-				status = allTests[goTestOutputRow.TestName]
+				status = allTests[key]
 			}
 			if goTestOutputRow.Action == "pass" || goTestOutputRow.Action == "fail" || goTestOutputRow.Action == "skip" {
 				if goTestOutputRow.Action == "pass" {
