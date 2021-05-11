@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -19,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type (
@@ -250,12 +253,38 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 
 func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error) {
 	testFileDetailByPackage := testFileDetailsByPackage{}
+	ctx := context.Background()
+	g, ctx := errgroup.WithContext(ctx)
+	details := make(chan testFileDetailsByPackage)
 	for packageName := range allPackageNames {
-		testFileDetailsByTest, err := getTestDetails(packageName)
-		if err != nil {
-			return nil, err
+		name := packageName
+		g.Go(func() error {
+			testFileDetailsByTest, err := getTestDetails(name)
+			if err != nil {
+				return err
+			}
+			select {
+			case details <- testFileDetailsByPackage{name: testFileDetailsByTest}:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+			return nil
+
+		})
+	}
+	go func() {
+		g.Wait()
+		close(details)
+	}()
+
+	testFileDetailByPackage = make(testFileDetailsByPackage, len(allPackageNames))
+	for d := range details {
+		for packageName, testFileDetailsByTest := range d {
+			testFileDetailByPackage[packageName] = testFileDetailsByTest
 		}
-		testFileDetailByPackage[packageName] = testFileDetailsByTest
+	}
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 	return testFileDetailByPackage, nil
 }
