@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -202,6 +203,43 @@ func TestReadTestDataFromStdIn(t *testing.T) {
 	assertions.Equal("--- FAIL: TestFunc3 (0.00s)\n", val.Output[3])
 	assertions.Equal(0, val.TestFunctionDetail.Line)
 	assertions.Equal(0, val.TestFunctionDetail.Col)
+}
+
+func TestGetAllDetails(t *testing.T) {
+	assertions := assert.New(t)
+	data := `{
+	"Dir": ".",
+	"ImportPath": "github.com/vakenbolt/go-test-report",
+	"Name": "main",
+	"Module": {
+		"Path": "github.com/vakenbolt/go-test-report",
+		"Main": true,
+		"Dir": "."
+	},
+	"GoFiles": [
+		"main.go"
+	],
+	"TestGoFiles": [
+		"main_test.go"
+	]
+}`
+	tmpfile, err := ioutil.TempFile("", "*.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err = tmpfile.WriteString(data); err != nil {
+		t.Fatal(err)
+	}
+	if err = tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	testFileDetailsByPackage, err := getAllDetails(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertions.Len(testFileDetailsByPackage, 1)
 }
 
 func TestGenerateReport(t *testing.T) {
