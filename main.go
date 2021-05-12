@@ -286,7 +286,7 @@ func getAllDetails(listFile string) (testFileDetailsByPackage, error) {
 }
 
 func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error) {
-	testFileDetailByPackage := testFileDetailsByPackage{}
+	var testFileDetailByPackage testFileDetailsByPackage
 	ctx := context.Background()
 	g, ctx := errgroup.WithContext(ctx)
 	details := make(chan testFileDetailsByPackage)
