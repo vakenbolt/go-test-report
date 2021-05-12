@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestVersionCommand(t *testing.T) {

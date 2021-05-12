@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -21,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
 
