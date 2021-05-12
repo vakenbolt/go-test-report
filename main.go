@@ -71,6 +71,7 @@ type (
 		titleFlag  string
 		sizeFlag   string
 		groupSize  int
+		listFlag   string
 		outputFlag string
 		verbose    bool
 	}
@@ -148,7 +149,12 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			}
 			elapsedTestTime := time.Since(startTestTime)
 			// used to the location of test functions in test go files by package and test function name.
-			testFileDetailByPackage, err := getPackageDetails(allPackageNames)
+			var testFileDetailByPackage testFileDetailsByPackage
+			if flags.listFlag != "" {
+				testFileDetailByPackage, err = getAllDetails(flags.listFlag)
+			} else {
+				testFileDetailByPackage, err = getPackageDetails(allPackageNames)
+			}
 			if err != nil {
 				return err
 			}
@@ -188,6 +194,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"g",
 		20,
 		"the number of tests per test group indicator")
+	rootCmd.PersistentFlags().StringVarP(&flags.listFlag,
+		"list",
+		"l",
+		"",
+		"the JSON module list")
 	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
 		"output",
 		"o",
@@ -249,6 +260,29 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 		}
 	}
 	return allPackageNames, allTests, nil
+}
+
+func getAllDetails(listFile string) (testFileDetailsByPackage, error) {
+	testFileDetailByPackage := testFileDetailsByPackage{}
+	f, err := os.Open(listFile)
+	defer f.Close()
+	if err != nil {
+		return nil, err
+	}
+	list := json.NewDecoder(f)
+	for list.More() {
+		goListJSON := goListJSON{}
+		if err := list.Decode(&goListJSON); err != nil {
+			return nil, err
+		}
+		packageName := goListJSON.ImportPath
+		testFileDetailsByTest, err := getFileDetails(&goListJSON)
+		if err != nil {
+			return nil, err
+		}
+		testFileDetailByPackage[packageName] = testFileDetailsByTest
+	}
+	return testFileDetailByPackage, nil
 }
 
 func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error) {
