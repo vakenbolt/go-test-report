@@ -1,3 +1,4 @@
+VERSION := $(shell grep -o 'const.*=*' version.go  | cut -d '"' -f2)
 MACOS := go-test-report-darwin-v$(VERSION)
 LINUX := go-test-report-linux-v$(VERSION)
 WINDOWS := go-test-report-windows-v$(VERSION)
