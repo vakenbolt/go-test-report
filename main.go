@@ -217,15 +217,16 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 		}
 		if goTestOutputRow.TestName != "" {
 			var status *testStatus
-			if _, exists := allTests[goTestOutputRow.TestName]; !exists {
+			key := goTestOutputRow.Package + "." + goTestOutputRow.TestName
+			if _, exists := allTests[key]; !exists {
 				status = &testStatus{
 					TestName: goTestOutputRow.TestName,
 					Package:  goTestOutputRow.Package,
 					Output:   []string{},
 				}
-				allTests[goTestOutputRow.TestName] = status
+				allTests[key] = status
 			} else {
-				status = allTests[goTestOutputRow.TestName]
+				status = allTests[key]
 			}
 			if goTestOutputRow.Action == "pass" || goTestOutputRow.Action == "fail" || goTestOutputRow.Action == "skip" {
 				if goTestOutputRow.Action == "pass" {
@@ -297,6 +298,22 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsBy
 	return testFileDetailByPackage, nil
 }
 
+type testRef struct {
+	key  string
+	name string
+}
+type byName []testRef
+
+func (t byName) Len() int {
+	return len(t)
+}
+func (t byName) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+func (t byName) Less(i, j int) bool {
+	return t[i].name < t[j].name
+}
+
 func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
 	// read the html template from the generated embedded asset go file
 	tpl := template.New("test_report.html.template")
@@ -322,13 +339,13 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	tgID := 0
 
 	// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
-	var testNames []string
-	for test := range allTests {
-		testNames = append(testNames, test)
+	var tests []testRef
+	for test, status := range allTests {
+		tests = append(tests, testRef{test, status.TestName})
 	}
-	sort.Strings(testNames)
-	for _, testName := range testNames {
-		status := allTests[testName]
+	sort.Sort(byName(tests))
+	for _, test := range tests {
+		status := allTests[test.key]
 		if len(tmplData.TestResults) == tgID {
 			tmplData.TestResults = append(tmplData.TestResults, &testGroupData{})
 		}
