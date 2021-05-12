@@ -304,6 +304,10 @@ func getTestDetails(packageName string) (testFileDetailsByTest, error) {
 	if err := json.Unmarshal(out.Bytes(), goListJSON); err != nil {
 		return nil, err
 	}
+	return getFileDetails(goListJSON)
+}
+
+func getFileDetails(goListJSON *goListJSON) (testFileDetailsByTest, error) {
 	testFileDetailByTest := map[string]*testFileDetail{}
 	for _, file := range goListJSON.TestGoFiles {
 		sourceFilePath := fmt.Sprintf("%s/%s", goListJSON.Dir, file)
