@@ -276,7 +276,8 @@ func TestGenerateReport(t *testing.T) {
 	}
 	elapsedTestTime := 3 * time.Second
 	writer := bufio.NewWriter(&bytes.Buffer{})
-	err := generateReport(tmplData, allTests, testFileDetailsByPackage, elapsedTestTime, writer)
+	tpl, _ := tmplData.initReportHTML()
+	err := generateReport(tpl, tmplData, allTests, testFileDetailsByPackage, elapsedTestTime, writer)
 	assertions.Nil(err)
 	assertions.Equal(2, tmplData.NumOfTestPassed)
 	assertions.Equal(1, tmplData.NumOfTestFailed)

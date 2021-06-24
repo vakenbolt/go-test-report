@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,34 +41,14 @@ type (
 		TestFunctionDetail testFunctionFilePos
 	}
 
-	templateData struct {
-		TestResultGroupIndicatorWidth  string
-		TestResultGroupIndicatorHeight string
-		TestResults                    []*testGroupData
-		NumOfTestPassed                int
-		NumOfTestFailed                int
-		NumOfTestSkipped               int
-		NumOfTests                     int
-		TestDuration                   time.Duration
-		ReportTitle                    string
-		JsCode                         template.JS
-		numOfTestsPerGroup             int
-		OutputFilename                 string
-		TestExecutionDate              string
-	}
-
-	testGroupData struct {
-		FailureIndicator string
-		SkippedIndicator string
-		TestResults      []*testStatus
-	}
-
 	cmdFlags struct {
-		titleFlag  string
-		sizeFlag   string
-		groupSize  int
-		outputFlag string
-		verbose    bool
+		titleFlag     string
+		sizeFlag      string
+		groupSize     int
+		outputFlag    string
+		verbose       bool
+		append        bool
+		targetPackage string
 	}
 
 	goListJSONModule struct {
@@ -126,7 +105,22 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			}
 			stdin := os.Stdin
 			stdinScanner := bufio.NewScanner(stdin)
-			testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
+			var (
+				testReportHTMLTemplateFile *os.File
+				tpl                        *template.Template
+			)
+			tpl, err := tmplData.initReportHTML()
+			if err != nil {
+				return err
+			}
+			if flags.append && FileExist(tmplData.OutputFilename) {
+				testReportHTMLTemplateFile, _ = os.OpenFile(tmplData.OutputFilename, os.O_RDWR, 0)
+				err := tmplData.readDataFromHTML(testReportHTMLTemplateFile)
+				if err != nil {
+					return err
+				}
+			}
+			testReportHTMLTemplateFile, _ = os.Create(tmplData.OutputFilename)
 			reportFileWriter := bufio.NewWriter(testReportHTMLTemplateFile)
 			defer func() {
 				_ = stdin.Close()
@@ -144,11 +138,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			}
 			elapsedTestTime := time.Since(startTestTime)
 			// used to the location of test functions in test go files by package and test function name.
-			testFileDetailByPackage, err := getPackageDetails(allPackageNames)
+			testFileDetailByPackage, err := getPackageDetails(allPackageNames, flags.targetPackage)
 			if err != nil {
 				return err
 			}
-			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
+			err = generateReport(tpl, tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
 			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
@@ -182,7 +176,7 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 	rootCmd.PersistentFlags().IntVarP(&flags.groupSize,
 		"groupSize",
 		"g",
-		20,
+		100,
 		"the number of tests per test group indicator")
 	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
 		"output",
@@ -194,6 +188,16 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"v",
 		false,
 		"while processing, show the complete output from go test ")
+	rootCmd.PersistentFlags().BoolVarP(&flags.append,
+		"append",
+		"a",
+		false,
+		"append to the HTML output file")
+	rootCmd.PersistentFlags().StringVarP(&flags.targetPackage,
+		"package",
+		"p",
+		"",
+		"if run with a test file, point out the target package")
 
 	return rootCmd, tmplData, flags
 }
@@ -213,7 +217,7 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 		}
 		goTestOutputRow := &goTestOutputRow{}
 		if err := json.Unmarshal(lineInput, goTestOutputRow); err != nil {
-			return nil, nil, err
+			continue
 		}
 		if goTestOutputRow.TestName != "" {
 			var status *testStatus
@@ -239,7 +243,6 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 			}
 			allPackageNames[goTestOutputRow.Package] = nil
 			if strings.Contains(goTestOutputRow.Output, "--- PASS:") {
-				status.Passed = true
 				goTestOutputRow.Output = strings.TrimSpace(goTestOutputRow.Output)
 			}
 			status.Output = append(status.Output, goTestOutputRow.Output)
@@ -248,13 +251,17 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 	return allPackageNames, allTests, nil
 }
 
-func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error) {
+func getPackageDetails(allPackageNames map[string]*types.Nil, defaultPackage string) (testFileDetailsByPackage, error) {
 	var out bytes.Buffer
 	var cmd *exec.Cmd
 	testFileDetailByPackage := testFileDetailsByPackage{}
 	stringReader := strings.NewReader("")
 	for packageName := range allPackageNames {
-		cmd = exec.Command("go", "list", "-json", packageName)
+		if packageName == "command-line-arguments" {
+			cmd = exec.Command("go", "list", "-json", defaultPackage)
+		} else {
+			cmd = exec.Command("go", "list", "-json", packageName)
+		}
 		out.Reset()
 		stringReader.Reset("")
 		cmd.Stdin = stringReader
@@ -315,29 +322,9 @@ func (t byName) Less(i, j int) bool {
 	return t[i].name < t[j].name
 }
 
-func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
-	// read the html template from the generated embedded asset go file
-	tpl := template.New("test_report.html.template")
-	testReportHTMLTemplateStr, err := hex.DecodeString(testReportHTMLTemplate)
-	if err != nil {
-		return err
-	}
-	tpl, err = tpl.Parse(string(testReportHTMLTemplateStr))
-	if err != nil {
-		return err
-	}
-	// read Javascript code from the generated embedded asset go file
-	testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
-	if err != nil {
-		return err
-	}
-
-	tmplData.NumOfTestPassed = 0
-	tmplData.NumOfTestFailed = 0
-	tmplData.NumOfTestSkipped = 0
-	tmplData.JsCode = template.JS(testReportJsCodeStr)
+func generateReport(tpl *template.Template, tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
 	tgCounter := 0
-	tgID := 0
+	tgID := len(tmplData.TestResults)
 
 	// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
 	var tests []testRef
@@ -375,7 +362,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		}
 	}
 	tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed + tmplData.NumOfTestSkipped
-	tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
+	tmplData.TestDuration += elapsedTestTime.Round(time.Millisecond)
 	td := time.Now()
 	tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d %02d:%02d:%02d",
 		td.Month(), td.Day(), td.Year(), td.Hour(), td.Minute(), td.Second())

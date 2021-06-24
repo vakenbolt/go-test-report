@@ -91,12 +91,14 @@ Available Commands:
   version     Prints the version number of go-test-report
 
 Flags:
-  -g, --groupSize int   the number of tests per test group indicator (default 20)
-  -h, --help            help for go-test-report
-  -o, --output string   the HTML output file (default "test_report.html")
-  -s, --size string     the size (in pixels) of the clickable indicator for test result groups (default "24")
-  -t, --title string    the title text shown in the test report (default "go-test-report")
-  -v, --verbose         while processing, show the complete output from go test
+  -a, --append           append to the HTML output file
+  -g, --groupSize int    the number of tests per test group indicator (default 100)
+  -h, --help             help for go-test-report
+  -o, --output string    the HTML output file (default "test_report.html")
+  -p, --package string   if run with a test file, point out the target package
+  -s, --size string      the size (in pixels) of the clickable indicator for test result groups (default "24")
+  -t, --title string     the title text shown in the test report (default "go-test-report")
+  -v, --verbose          while processing, show the complete output from go test
 
 Use "go-test-report [command] --help" for more information about a command.
 ```
@@ -133,6 +135,17 @@ Additionally, _both_ the width and height of the _group size indicator_ can be s
 
 ```bash
 $ go test -json | go-test-report -g 32x16
+```
+
+Use `-a` or `--append` to append message to the existed html file. you should use it with `-o` or you will append the content to default html file.
+every time you append, will create a new group.
+```bash
+$ go test -json | go-test-report -a (-o xxx.html)
+```
+
+Use `-p` to point out that tested file in which package. Example bellow:
+```bash
+$ go test ./main_test.go | go-test-report -p github.com/vakenbolt/go-test-report
 ```
 
 ## Building from source
