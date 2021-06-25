@@ -94,7 +94,7 @@ func (tp *templateData) readDataFromHTML(fi *os.File) (err error) {
 	tp.NumOfTestFailed = failedNum
 
 	strs := strings.SplitAfter(doc.Find("script").Text(), "const data = ")
-	strs = strings.SplitAfter(strs[1], "]}]")
+	strs = strings.SplitAfter(strs[1], "}}]}]")
 	var tempResult []*testGroupData
 	err = json.Unmarshal([]byte(strs[0]), &tempResult)
 	if err != nil {
