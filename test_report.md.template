@@ -1,0 +1,25 @@
+# {{.ReportTitle}}
+
+**Total: {{.NumOfTests}} Duration: {{.TestDuration}}**
+
+**&check; Passed: {{.NumOfTestPassed}} | &dash; Skipped: {{.NumOfTestSkipped}} | &cross; Failed: {{.NumOfTestFailed}}**
+
+{{.TestExecutionDate}}
+
+{{range $k, $v := .TestResults}}{{range $tr := .TestResults}}
+## {{$tr.TestName}}
+
+{{if $tr.Passed}}&check; Passed{{else if $tr.Skipped}}&dash; Skipped{{else}}&cross; Failed{{end}}
+
+⏱  {{$tr.ElapsedTime}}s
+
+```text
+{{$tr.Output}}
+```
+
+Package: `{{$tr.Package}}`
+
+{{if $tr.TestFileName}}Filename: {{$tr.TestFileName}}
+Line: {{$tr.TestFunctionDetail.Line}}
+Col: {{$tr.TestFunctionDetail.Col}}{{end}}
+{{end}}{{end}}

@@ -2,6 +2,7 @@ node_modules/
 go-test-report
 go-test-report.exe
 test_report.html
+test_report.md
 embed_assets/embed_assets
 release_builds/
 .idea/

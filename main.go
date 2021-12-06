@@ -65,11 +65,12 @@ type (
 	}
 
 	cmdFlags struct {
-		titleFlag  string
-		sizeFlag   string
-		groupSize  int
-		outputFlag string
-		verbose    bool
+		titleFlag    string
+		sizeFlag     string
+		groupSize    int
+		markdownFlag bool
+		outputFlag   string
+		verbose      bool
 	}
 
 	goListJSONModule struct {
@@ -121,6 +122,9 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
+			if flags.outputFlag == "test_report.html" && flags.markdownFlag {
+				tmplData.OutputFilename = "test_report.md"
+			}
 			if err := checkIfStdinIsPiped(); err != nil {
 				return err
 			}
@@ -148,7 +152,7 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			if err != nil {
 				return err
 			}
-			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
+			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, flags.markdownFlag, reportFileWriter)
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
 			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
@@ -184,6 +188,10 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"g",
 		20,
 		"the number of tests per test group indicator")
+	rootCmd.PersistentFlags().BoolVar(&flags.markdownFlag,
+		"markdown",
+		false,
+		"output markdown instead of html")
 	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
 		"output",
 		"o",
@@ -314,10 +322,14 @@ func (t byName) Less(i, j int) bool {
 	return t[i].name < t[j].name
 }
 
-func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
+func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, markdown bool, reportFileWriter *bufio.Writer) error {
 	// read the html template from the generated embedded asset go file
 	tpl := template.New("test_report.html.template")
 	testReportHTMLTemplateStr, err := hex.DecodeString(testReportHTMLTemplate)
+	if markdown {
+		tpl = template.New("test_report.md.template")
+		testReportHTMLTemplateStr, err = hex.DecodeString(testReportMarkdownTemplate)
+	}
 	if err != nil {
 		return err
 	}
