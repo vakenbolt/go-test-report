@@ -1,0 +1,7 @@
+# {{.ReportTitle}}
+
+**Total: {{.NumOfTests}}**
+{{range $k, $v := .TestResults}}{{range $tr := .TestResults}}
+{{if $tr.Passed}}&check;{{else if $tr.Skipped}}&dash;{{else}}&cross;{{end}} {{$tr.TestName}}
+{{end}}{{end}}
+**&check; Passed: {{.NumOfTestPassed}} | &dash; Skipped: {{.NumOfTestSkipped}} | &cross; Failed: {{.NumOfTestFailed}}**
