@@ -9,10 +9,12 @@ import (
 )
 
 var htmlTemplate []byte
+var cssStyle []byte
 var jsCode []byte
 
 func init() {
 	htmlTemplate, _ = ioutil.ReadFile("../test_report.html.template")
+	cssStyle, _ = ioutil.ReadFile("../test_report.css")
 	jsCode, _ = ioutil.ReadFile("../test_report.js")
 }
 
@@ -30,6 +32,9 @@ func main() {
 	dst := make([]byte, hex.EncodedLen(len(htmlTemplate)))
 	hex.Encode(dst, htmlTemplate)
 	_, _ = writer.WriteString(fmt.Sprintf("package main\n\nvar testReportHTMLTemplate = `%s`", string(dst)))
+	dst = make([]byte, hex.EncodedLen(len(cssStyle)))
+	hex.Encode(dst, cssStyle)
+	_, _ = writer.WriteString(fmt.Sprintf("\n\nvar testReportCssStyle = `%s`\n", string(dst)))
 	dst = make([]byte, hex.EncodedLen(len(jsCode)))
 	hex.Encode(dst, jsCode)
 	_, _ = writer.WriteString(fmt.Sprintf("\n\nvar testReportJsCode = `%s`\n", string(dst)))

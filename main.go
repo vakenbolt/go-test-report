@@ -55,6 +55,7 @@ type (
 		NumOfTests                     int
 		TestDuration                   time.Duration
 		ReportTitle                    string
+		CssStyle                       template.CSS
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
 		OutputFilename                 string
@@ -400,6 +401,11 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	if err != nil {
 		return err
 	}
+	// read Stylesheet code from the generated embedded asset go file
+	testReportCssStyleStr, err := hex.DecodeString(testReportCssStyle)
+	if err != nil {
+		return err
+	}
 	// read Javascript code from the generated embedded asset go file
 	testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
 	if err != nil {
@@ -410,6 +416,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	tmplData.NumOfTestFailed = 0
 	tmplData.NumOfTestSkipped = 0
 	tmplData.JsCode = template.JS(testReportJsCodeStr)
+	tmplData.CssStyle = template.CSS(testReportCssStyleStr)
 	tgCounter := 0
 	tgID := 0
 
