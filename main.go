@@ -254,6 +254,7 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 			}
 			allPackageNames[goTestOutputRow.Package] = nil
 			if strings.Contains(goTestOutputRow.Output, "--- PASS:") {
+				status.Passed = true
 				goTestOutputRow.Output = strings.TrimSpace(goTestOutputRow.Output)
 			}
 			status.Output = append(status.Output, goTestOutputRow.Output)
