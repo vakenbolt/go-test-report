@@ -489,8 +489,10 @@ func parseSizeFlag(tmplData *templateData, flags *cmdFlags) error {
 	return nil
 }
 
+var osStdin = os.Stdin
+
 func checkIfStdinIsPiped() error {
-	stat, err := os.Stdin.Stat()
+	stat, err := osStdin.Stat()
 	if err != nil {
 		return err
 	}

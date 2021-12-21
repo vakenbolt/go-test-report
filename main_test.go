@@ -287,6 +287,34 @@ func TestGetPackageDetails(t *testing.T) {
 	assertions.Len(testFileDetailsByPackage, 1)
 }
 
+func TestReportCommand(t *testing.T) {
+	assertions := assert.New(t)
+	execCommand = fakeExecCommand
+	defer func() { execCommand = exec.Command }()
+	tmpjson, err := ioutil.TempFile("", "*.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpjson.Name())
+	tmphtml, err := ioutil.TempFile("", "*.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmphtml.Name())
+	buffer := bytes.NewBufferString("")
+	rootCmd, _, _ := initRootCommand()
+	osStdin = tmpjson
+	defer func() { osStdin = os.Stdin }()
+	rootCmd.SetIn(tmpjson)
+	rootCmd.SetOut(buffer)
+	rootCmd.SetArgs([]string{"--output", tmphtml.Name()})
+	rootCmdErr := rootCmd.Execute()
+	assertions.Nil(rootCmdErr)
+	output, readErr := ioutil.ReadAll(buffer)
+	assertions.Nil(readErr)
+	assertions.Contains(string(output), "[go-test-report] finished")
+}
+
 func TestGenerateReport(t *testing.T) {
 	assertions := assert.New(t)
 	tmplData := &templateData{
