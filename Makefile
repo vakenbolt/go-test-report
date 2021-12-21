@@ -13,6 +13,15 @@ genbuild: gencode
 gencode:
 	(cd embed_assets/;set -e;go build;./embed_assets)
 
+.PHONY: test
+test:
+	go test
+
+.PHONY: coverage
+coverage:
+	go test -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+
 buildall: genbuild
 	echo "Building..."
 

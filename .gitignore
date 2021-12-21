@@ -2,6 +2,8 @@ node_modules/
 go-test-report
 go-test-report.exe
 test_report.html
+coverage.out
+coverage.html
 embed_assets/embed_assets
 release_builds/
 .idea/
