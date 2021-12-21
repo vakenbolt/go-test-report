@@ -91,12 +91,14 @@ Available Commands:
   version     Prints the version number of go-test-report
 
 Flags:
-  -g, --groupSize int   the number of tests per test group indicator (default 20)
-  -h, --help            help for go-test-report
-  -o, --output string   the HTML output file (default "test_report.html")
-  -s, --size string     the size (in pixels) of the clickable indicator for test result groups (default "24")
-  -t, --title string    the title text shown in the test report (default "go-test-report")
-  -v, --verbose         while processing, show the complete output from go test
+  -d, --duration string        the test duration from the original test run (in "0.000s" format)
+  -e, --executionDate string   the test execution date of the original test run (in RFC 3339 format)
+  -g, --groupSize int          the number of tests per test group indicator (default 20)
+  -h, --help                   help for go-test-report
+  -o, --output string          the HTML output file (default "test_report.html")
+  -s, --size string            the size (in pixels) of the clickable indicator for test result groups (default "24")
+  -t, --title string           the title text shown in the test report (default "go-test-report")
+  -v, --verbose                while processing, show the complete output from go test
 
 Use "go-test-report [command] --help" for more information about a command.
 ```
@@ -114,6 +116,25 @@ To change the default title shown in the `test_report.html` file.
 $ go test -json | go-test-report -t "My Test Report"
 ```
 
+The default duration will be the time it takes to read the JSON data.
+This can be changed by using the `-d` or `--duration` flag explicitly.
+
+To report a test duration, from a previously recorded test run.
+
+```bash
+$ gotestsum --jsonfile test.json
+✓  . (6ms)
+
+DONE 18 tests in 0.398s
+$ go-test-report -d 0.398s < test.json
+```
+
+To report the test date, use the `-e` or `--executionDate` flag.
+
+```
+$ date --rfc-3339=seconds
+$ ls --full-time test.json
+```
 
 The default number of tests in a _test group_ can be changed using the `-g` or `--groupSize` flag. For example, the following command will change the default number of tests in a group to 8.
 
