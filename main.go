@@ -131,7 +131,10 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			}
 			stdin := os.Stdin
 			stdinScanner := bufio.NewScanner(stdin)
-			testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
+			testReportHTMLTemplateFile, err := os.Create(tmplData.OutputFilename)
+			if err != nil {
+				return err
+			}
 			reportFileWriter := bufio.NewWriter(testReportHTMLTemplateFile)
 			defer func() {
 				_ = stdin.Close()
@@ -159,6 +162,9 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 				return err
 			}
 			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
+			if err != nil {
+				return err
+			}
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
 			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
@@ -265,10 +271,10 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 func getAllDetails(listFile string) (testFileDetailsByPackage, error) {
 	testFileDetailByPackage := testFileDetailsByPackage{}
 	f, err := os.Open(listFile)
-	defer f.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 	list := json.NewDecoder(f)
 	for list.More() {
 		goListJSON := goListJSON{}
@@ -307,7 +313,7 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsBy
 		})
 	}
 	go func() {
-		g.Wait()
+		_ = g.Wait()
 		close(details)
 	}()
 
