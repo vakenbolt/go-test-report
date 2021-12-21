@@ -323,11 +323,13 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsBy
 	return testFileDetailByPackage, nil
 }
 
+var execCommand = exec.Command
+
 func getTestDetails(packageName string) (testFileDetailsByTest, error) {
 	var out bytes.Buffer
 	var cmd *exec.Cmd
 	stringReader := strings.NewReader("")
-	cmd = exec.Command("go", "list", "-json", packageName)
+	cmd = execCommand("go", "list", "-json", packageName)
 	cmd.Stdin = stringReader
 	cmd.Stdout = &out
 	err := cmd.Run()

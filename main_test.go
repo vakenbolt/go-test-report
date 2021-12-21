@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"go/types"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 	"time"
@@ -205,9 +207,7 @@ func TestReadTestDataFromStdIn(t *testing.T) {
 	assertions.Equal(0, val.TestFunctionDetail.Col)
 }
 
-func TestGetAllDetails(t *testing.T) {
-	assertions := assert.New(t)
-	data := `{
+const goListResult = `{
 	"Dir": ".",
 	"ImportPath": "github.com/vakenbolt/go-test-report",
 	"Name": "main",
@@ -223,12 +223,15 @@ func TestGetAllDetails(t *testing.T) {
 		"main_test.go"
 	]
 }`
+
+func TestGetAllDetails(t *testing.T) {
+	assertions := assert.New(t)
 	tmpfile, err := ioutil.TempFile("", "*.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpfile.Name())
-	if _, err = tmpfile.WriteString(data); err != nil {
+	if _, err = tmpfile.WriteString(goListResult); err != nil {
 		t.Fatal(err)
 	}
 	if err = tmpfile.Close(); err != nil {
@@ -236,6 +239,48 @@ func TestGetAllDetails(t *testing.T) {
 	}
 
 	testFileDetailsByPackage, err := getAllDetails(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertions.Len(testFileDetailsByPackage, 1)
+}
+
+func fakeExecCommand(command string, args ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestHelperProcess", "--", command}
+	cs = append(cs, args...)
+	cmd := exec.Command(os.Args[0], cs...)
+	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1"}
+	return cmd
+}
+
+// TestHelperProcess isn't a real test.
+func TestHelperProcess(t *testing.T) {
+	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
+		return
+	}
+	args := os.Args
+	for len(args) > 0 {
+		if args[0] == "--" {
+			args = args[1:]
+			break
+		}
+		args = args[1:]
+	}
+
+	if args[0] != "go" || args[1] != "list" {
+		os.Exit(1)
+	}
+	fmt.Fprint(os.Stdout, goListResult)
+	os.Exit(0)
+}
+
+func TestGetPackageDetails(t *testing.T) {
+	assertions := assert.New(t)
+	execCommand = fakeExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	allPackageNames := map[string]*types.Nil{"github.com/vakenbolt/go-test-report": nil}
+	testFileDetailsByPackage, err := getPackageDetails(allPackageNames)
 	if err != nil {
 		t.Fatal(err)
 	}
