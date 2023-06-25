@@ -365,8 +365,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 				tmplData.TestResults = append(tmplData.TestResults, &testGroupData{PackageName: allTests[test.key].Package})
 				tgID++
 			}
-		}
-		if !tmplData.GroupByPackage && len(tmplData.TestResults) == tgID {
+		} else if len(tmplData.TestResults) == tgID {
 			tmplData.TestResults = append(tmplData.TestResults, &testGroupData{})
 		}
 		// add file info(name and position; line and col) associated with the test function
