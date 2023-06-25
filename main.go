@@ -121,7 +121,6 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			if err := parseSizeFlag(tmplData, flags); err != nil {
 				return err
 			}
-			fmt.Println("XXX")
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.GroupByPackage = flags.groupByPackage
 			tmplData.ReportTitle = flags.titleFlag
@@ -130,16 +129,13 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			if err := checkIfStdinIsPiped(); err != nil {
 				return err
 			}
-			fmt.Println("XXX_1")
 			stdin := os.Stdin
 			stdinScanner := bufio.NewScanner(stdin)
 			startTestTime := time.Now()
-			fmt.Println("XXX_2")
 			allPackageNames, allTests, err := readTestDataFromStdIn(stdinScanner, flags, cmd)
 			if err != nil {
 				return errors.New(err.Error() + "\n")
 			}
-			fmt.Println("XXX_3")
 			elapsedTestTime := time.Since(startTestTime)
 			// used to the location of test functions in test go files by package and test function name.
 			testFileDetailByPackage, err := getPackageDetails(allPackageNames)
@@ -148,7 +144,6 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			}
 			// Create output file
 			testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
-			fmt.Println("XXX_4")
 			reportFileWriter := bufio.NewWriter(testReportHTMLTemplateFile)
 			defer func() {
 				_ = stdin.Close()
@@ -160,7 +155,6 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 				}
 			}()
 			// Generate report
-			fmt.Println("XXX_5")
 			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
