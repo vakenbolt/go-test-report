@@ -9,6 +9,9 @@ WIN_DIR := release_builds/windows-amd64/
 genbuild: gencode
 	go build
 
+builddebug: gencode
+	go build -gcflags "all=-N -l"
+
 gencode:
 	(cd embed_assets/;set -e;go build;./embed_assets)
 
@@ -37,6 +40,11 @@ buildall: genbuild
 	(cd $(WIN_DIR); zip -r $(WINDOWS).zip go-test-report.exe $(WINDOWS).sha256)
 
 	echo "...Done!"
+
+clean:
+	-rm ./embed_assets/embed_assets
+	-rm go-test-report
+	-rm -r release_builds/
 
 dockertest: genbuild
 	docker build . -t go-test-report-test-runner:$(VERSION)

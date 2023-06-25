@@ -54,22 +54,25 @@ type (
 		ReportTitle                    string
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
+		GroupByPackage                 bool
 		OutputFilename                 string
 		TestExecutionDate              string
 	}
 
 	testGroupData struct {
+		PackageName      string
 		FailureIndicator string
 		SkippedIndicator string
 		TestResults      []*testStatus
 	}
 
 	cmdFlags struct {
-		titleFlag  string
-		sizeFlag   string
-		groupSize  int
-		outputFlag string
-		verbose    bool
+		titleFlag      string
+		sizeFlag       string
+		groupSize      int
+		groupByPackage bool
+		outputFlag     string
+		verbose        bool
 	}
 
 	goListJSONModule struct {
@@ -118,15 +121,34 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			if err := parseSizeFlag(tmplData, flags); err != nil {
 				return err
 			}
+			fmt.Println("XXX")
 			tmplData.numOfTestsPerGroup = flags.groupSize
+			tmplData.GroupByPackage = flags.groupByPackage
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
+
 			if err := checkIfStdinIsPiped(); err != nil {
 				return err
 			}
+			fmt.Println("XXX_1")
 			stdin := os.Stdin
 			stdinScanner := bufio.NewScanner(stdin)
+			startTestTime := time.Now()
+			fmt.Println("XXX_2")
+			allPackageNames, allTests, err := readTestDataFromStdIn(stdinScanner, flags, cmd)
+			if err != nil {
+				return errors.New(err.Error() + "\n")
+			}
+			fmt.Println("XXX_3")
+			elapsedTestTime := time.Since(startTestTime)
+			// used to the location of test functions in test go files by package and test function name.
+			testFileDetailByPackage, err := getPackageDetails(allPackageNames)
+			if err != nil {
+				return err
+			}
+			// Create output file
 			testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
+			fmt.Println("XXX_4")
 			reportFileWriter := bufio.NewWriter(testReportHTMLTemplateFile)
 			defer func() {
 				_ = stdin.Close()
@@ -137,17 +159,8 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 					e = err
 				}
 			}()
-			startTestTime := time.Now()
-			allPackageNames, allTests, err := readTestDataFromStdIn(stdinScanner, flags, cmd)
-			if err != nil {
-				return errors.New(err.Error() + "\n")
-			}
-			elapsedTestTime := time.Since(startTestTime)
-			// used to the location of test functions in test go files by package and test function name.
-			testFileDetailByPackage, err := getPackageDetails(allPackageNames)
-			if err != nil {
-				return err
-			}
+			// Generate report
+			fmt.Println("XXX_5")
 			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
@@ -184,6 +197,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"g",
 		20,
 		"the number of tests per test group indicator")
+	rootCmd.PersistentFlags().BoolVarP(&flags.verbose,
+		"groupByPackage",
+		"p",
+		false,
+		"group test result by package, will ignore the groupSize flag")
 	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
 		"output",
 		"o",
@@ -346,7 +364,17 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	sort.Sort(byName(tests))
 	for _, test := range tests {
 		status := allTests[test.key]
-		if len(tmplData.TestResults) == tgID {
+		if tmplData.GroupByPackage {
+			if len(tmplData.TestResults) == 0 {
+				tmplData.TestResults = append(tmplData.TestResults, &testGroupData{PackageName: allTests[test.key].Package})
+			} else {
+				if tmplData.TestResults[tgID].PackageName != allTests[test.key].Package {
+					tmplData.TestResults = append(tmplData.TestResults, &testGroupData{PackageName: allTests[test.key].Package})
+					tgID++
+				}
+			}
+		}
+		if !tmplData.GroupByPackage && len(tmplData.TestResults) == tgID {
 			tmplData.TestResults = append(tmplData.TestResults, &testGroupData{})
 		}
 		// add file info(name and position; line and col) associated with the test function
@@ -368,7 +396,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 			tmplData.NumOfTestPassed++
 		}
 		tgCounter++
-		if tgCounter == tmplData.numOfTestsPerGroup {
+		if !tmplData.GroupByPackage && tgCounter == tmplData.numOfTestsPerGroup {
 			tgCounter = 0
 			tgID++
 		}
