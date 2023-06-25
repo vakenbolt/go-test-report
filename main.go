@@ -361,11 +361,9 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		if tmplData.GroupByPackage {
 			if len(tmplData.TestResults) == 0 {
 				tmplData.TestResults = append(tmplData.TestResults, &testGroupData{PackageName: allTests[test.key].Package})
-			} else {
-				if tmplData.TestResults[tgID].PackageName != allTests[test.key].Package {
-					tmplData.TestResults = append(tmplData.TestResults, &testGroupData{PackageName: allTests[test.key].Package})
-					tgID++
-				}
+			} else if tmplData.TestResults[tgID].PackageName != allTests[test.key].Package {
+				tmplData.TestResults = append(tmplData.TestResults, &testGroupData{PackageName: allTests[test.key].Package})
+				tgID++
 			}
 		}
 		if !tmplData.GroupByPackage && len(tmplData.TestResults) == tgID {
