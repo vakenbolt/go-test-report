@@ -7,11 +7,8 @@ LIN_DIR := release_builds/linux-amd64/
 MAC_DIR := release_builds/darwin-amd64/
 WIN_DIR := release_builds/windows-amd64/
 
-genbuild: gencode
+genbuild:
 	go build
-
-gencode:
-	(cd embed_assets/;set -e;go build;./embed_assets)
 
 buildall: genbuild
 	echo "Building..."

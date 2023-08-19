@@ -151,14 +151,6 @@ To build `go-test-report` from source.
 $ gmake genbuild
 ```
 
-Because `go-test-report` embeds the HTML and Javascript code necessary to generate the report output file, a command to generate the embedded go code is needed. 
-
-```bash
-$ gmake gencode
-```
-> Alternatively, `make genbuild` can be used which automatically runs `gencode` _before_ `genbuild`
-
-
 To build the testing container _(This is the same docker image used during build automation)_:
 
 ```bash
