@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/hex"
+	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,6 +23,12 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
+
+//go:embed test_report.html.template
+var testReportHTMLTemplateStr string
+
+//go:embed test_report.js
+var testReportJsCodeStr string
 
 type (
 	goTestOutputRow struct {
@@ -390,18 +396,8 @@ func (t byName) Less(i, j int) bool {
 }
 
 func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
-	// read the html template from the generated embedded asset go file
 	tpl := template.New("test_report.html.template")
-	testReportHTMLTemplateStr, err := hex.DecodeString(testReportHTMLTemplate)
-	if err != nil {
-		return err
-	}
-	tpl, err = tpl.Parse(string(testReportHTMLTemplateStr))
-	if err != nil {
-		return err
-	}
-	// read Javascript code from the generated embedded asset go file
-	testReportJsCodeStr, err := hex.DecodeString(testReportJsCode)
+	tpl, err := tpl.Parse(testReportHTMLTemplateStr)
 	if err != nil {
 		return err
 	}
