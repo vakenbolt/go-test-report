@@ -68,12 +68,15 @@ type (
 	}
 
 	cmdFlags struct {
-		titleFlag  string
-		sizeFlag   string
-		groupSize  int
-		listFlag   string
-		outputFlag string
-		verbose    bool
+		titleFlag     string
+		elapsedFlag   string
+		executionDate string
+		sizeFlag      string
+		groupSize     int
+		listFlag      string
+		inputFlag     string
+		outputFlag    string
+		verbose       bool
 	}
 
 	goListJSONModule struct {
@@ -126,10 +129,19 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
-			if err := checkIfStdinIsPiped(); err != nil {
-				return err
+			var stdin *os.File
+			if flags.inputFlag != "" {
+				file, err := os.Open(flags.inputFlag)
+				if err != nil {
+					return err
+				}
+				stdin = file
+			} else {
+				if err := checkIfStdinIsPiped(); err != nil {
+					return err
+				}
+				stdin = os.Stdin
 			}
-			stdin := os.Stdin
 			stdinScanner := bufio.NewScanner(stdin)
 			testReportHTMLTemplateFile, _ := os.Create(tmplData.OutputFilename)
 			reportFileWriter := bufio.NewWriter(testReportHTMLTemplateFile)
@@ -148,6 +160,27 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 				return errors.New(err.Error() + "\n")
 			}
 			elapsedTestTime := time.Since(startTestTime)
+			if flags.elapsedFlag != "" {
+				elapsedTestTime, err = time.ParseDuration(flags.elapsedFlag)
+				if err != nil {
+					return err
+				}
+			}
+			testExecutionTime := time.Now()
+			if flags.inputFlag != "" {
+				st, err := os.Stat(flags.inputFlag)
+				if err != nil {
+					return err
+				}
+				testExecutionTime = st.ModTime()
+			}
+			if flags.executionDate != "" {
+				testExecutionTime, err = time.Parse(time.RFC3339, flags.executionDate)
+				if err != nil {
+					return err
+				}
+
+			}
 			// used to the location of test functions in test go files by package and test function name.
 			var testFileDetailByPackage testFileDetailsByPackage
 			if flags.listFlag != "" {
@@ -158,7 +191,7 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			if err != nil {
 				return err
 			}
-			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, reportFileWriter)
+			err = generateReport(tmplData, allTests, testFileDetailByPackage, elapsedTestTime, testExecutionTime, reportFileWriter)
 			elapsedTime := time.Since(startTime)
 			elapsedTimeMsg := []byte(fmt.Sprintf("[go-test-report] finished in %s\n", elapsedTime))
 			if _, err := cmd.OutOrStdout().Write(elapsedTimeMsg); err != nil {
@@ -184,6 +217,16 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"t",
 		"go-test-report",
 		"the title text shown in the test report")
+	rootCmd.PersistentFlags().StringVarP(&flags.elapsedFlag,
+		"elapsed",
+		"e",
+		os.Getenv("GOTESTSUM_ELAPSED"),
+		"the test elapsed time from the original test run (in \"0.000s\" format)")
+	rootCmd.PersistentFlags().StringVarP(&flags.executionDate,
+		"executionDate",
+		"d",
+		"",
+		"the test execution date of the original test run (in RFC 3339 format)")
 	rootCmd.PersistentFlags().StringVarP(&flags.sizeFlag,
 		"size",
 		"s",
@@ -199,6 +242,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"l",
 		"",
 		"the JSON module list")
+	rootCmd.PersistentFlags().StringVarP(&flags.inputFlag,
+		"input",
+		"i",
+		os.Getenv("GOTESTSUM_JSONFILE"),
+		"the JSON input file")
 	rootCmd.PersistentFlags().StringVarP(&flags.outputFlag,
 		"output",
 		"o",
@@ -389,7 +437,7 @@ func (t byName) Less(i, j int) bool {
 	return t[i].name < t[j].name
 }
 
-func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, reportFileWriter *bufio.Writer) error {
+func generateReport(tmplData *templateData, allTests map[string]*testStatus, testFileDetailByPackage testFileDetailsByPackage, elapsedTestTime time.Duration, testExecutionTime time.Time, reportFileWriter *bufio.Writer) error {
 	// read the html template from the generated embedded asset go file
 	tpl := template.New("test_report.html.template")
 	testReportHTMLTemplateStr, err := hex.DecodeString(testReportHTMLTemplate)
@@ -450,7 +498,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	}
 	tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed + tmplData.NumOfTestSkipped
 	tmplData.TestDuration = elapsedTestTime.Round(time.Millisecond)
-	td := time.Now()
+	td := testExecutionTime
 	tmplData.TestExecutionDate = fmt.Sprintf("%s %d, %d %02d:%02d:%02d",
 		td.Month(), td.Day(), td.Year(), td.Hour(), td.Minute(), td.Second())
 	if err := tpl.Execute(reportFileWriter, tmplData); err != nil {

@@ -87,16 +87,21 @@ Usage:
   go-test-report [command]
 
 Available Commands:
+  completion  Generate the autocompletion script for the specified shell
   help        Help about any command
   version     Prints the version number of go-test-report
 
 Flags:
-  -g, --groupSize int   the number of tests per test group indicator (default 20)
-  -h, --help            help for go-test-report
-  -o, --output string   the HTML output file (default "test_report.html")
-  -s, --size string     the size (in pixels) of the clickable indicator for test result groups (default "24")
-  -t, --title string    the title text shown in the test report (default "go-test-report")
-  -v, --verbose         while processing, show the complete output from go test
+  -e, --elapsed string         the test elapsed time from the original test run (in "0.000s" format)
+  -d, --executionDate string   the test execution date of the original test run (in RFC 3339 format)
+  -g, --groupSize int          the number of tests per test group indicator (default 20)
+  -h, --help                   help for go-test-report
+  -i, --input string           the JSON input file
+  -l, --list string            the JSON module list
+  -o, --output string          the HTML output file (default "test_report.html")
+  -s, --size string            the size (in pixels) of the clickable indicator for test result groups (default "24")
+  -t, --title string           the title text shown in the test report (default "go-test-report")
+  -v, --verbose                while processing, show the complete output from go test
 
 Use "go-test-report [command] --help" for more information about a command.
 ```
@@ -114,6 +119,27 @@ To change the default title shown in the `test_report.html` file.
 $ go test -json | go-test-report -t "My Test Report"
 ```
 
+The default duration will be the time it takes to read the JSON data.
+This can be changed by using the `-e` or `--elapsed` flag explicitly.
+
+To report a test duration, from a previously recorded test run:
+
+```bash
+$ gotestsum --jsonfile test_report.json
+✓  . (6ms)
+
+DONE 18 tests in 0.398s
+$ go-test-report -e 0.398s -i test_report.json
+```
+
+The default execution time will be when the test report is generated.
+To change the test date/time, use the `-d` or `--executionDate` flag.
+
+```
+$ date --rfc-3339=seconds
+```
+
+When using an input file, the file modification time is used.
 
 The default number of tests in a _test group_ can be changed using the `-g` or `--groupSize` flag. For example, the following command will change the default number of tests in a group to 8.
 
