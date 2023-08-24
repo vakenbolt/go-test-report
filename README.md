@@ -91,6 +91,7 @@ Available Commands:
   version     Prints the version number of go-test-report
 
 Flags:
+  -p, --groupPackage    group tests by package instead of by number
   -g, --groupSize int   the number of tests per test group indicator (default 20)
   -h, --help            help for go-test-report
   -o, --output string   the HTML output file (default "test_report.html")
@@ -119,6 +120,12 @@ The default number of tests in a _test group_ can be changed using the `-g` or `
 
 ```bash
 $ go test -json | go-test-report -g 8
+```
+
+To group the tests by their package instead of by count, use the `-p` or `--groupPackage` flag.
+
+```bash
+$ go test -json | go-test-report -p
 ```
 
 

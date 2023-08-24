@@ -57,6 +57,7 @@ type (
 		ReportTitle                    string
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
+		groupTestsByPackage            bool
 		OutputFilename                 string
 		TestExecutionDate              string
 	}
@@ -68,12 +69,13 @@ type (
 	}
 
 	cmdFlags struct {
-		titleFlag  string
-		sizeFlag   string
-		groupSize  int
-		listFlag   string
-		outputFlag string
-		verbose    bool
+		titleFlag    string
+		sizeFlag     string
+		groupSize    int
+		groupPackage bool
+		listFlag     string
+		outputFlag   string
+		verbose      bool
 	}
 
 	goListJSONModule struct {
@@ -124,6 +126,7 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 				return err
 			}
 			tmplData.numOfTestsPerGroup = flags.groupSize
+			tmplData.groupTestsByPackage = flags.groupPackage
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
 			if err := checkIfStdinIsPiped(); err != nil {
@@ -194,6 +197,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"g",
 		20,
 		"the number of tests per test group indicator")
+	rootCmd.PersistentFlags().BoolVarP(&flags.groupPackage,
+		"groupPackage",
+		"p",
+		false,
+		"group tests by package instead of by count")
 	rootCmd.PersistentFlags().StringVarP(&flags.listFlag,
 		"list",
 		"l",
@@ -375,9 +383,21 @@ func getFileDetails(goListJSON *goListJSON) (testFileDetailsByTest, error) {
 
 type testRef struct {
 	key  string
+	pkg  string
 	name string
 }
+type byPackage []testRef
 type byName []testRef
+
+func (t byPackage) Len() int {
+	return len(t)
+}
+func (t byPackage) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+func (t byPackage) Less(i, j int) bool {
+	return t[i].pkg < t[j].pkg
+}
 
 func (t byName) Len() int {
 	return len(t)
@@ -410,17 +430,28 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	tmplData.NumOfTestFailed = 0
 	tmplData.NumOfTestSkipped = 0
 	tmplData.JsCode = template.JS(testReportJsCodeStr)
+	tgPackage := ""
 	tgCounter := 0
 	tgID := 0
 
 	// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
 	var tests []testRef
 	for test, status := range allTests {
-		tests = append(tests, testRef{test, status.TestName})
+		tests = append(tests, testRef{test, status.Package, status.TestName})
 	}
-	sort.Sort(byName(tests))
+	if tmplData.groupTestsByPackage {
+		sort.Sort(byPackage(tests))
+	} else {
+		sort.Sort(byName(tests))
+	}
 	for _, test := range tests {
 		status := allTests[test.key]
+		if tmplData.groupTestsByPackage {
+			if tgPackage != "" && status.Package != tgPackage {
+				tgID++
+			}
+			tgPackage = status.Package
+		}
 		if len(tmplData.TestResults) == tgID {
 			tmplData.TestResults = append(tmplData.TestResults, &testGroupData{})
 		}
@@ -442,10 +473,12 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		} else {
 			tmplData.NumOfTestPassed++
 		}
-		tgCounter++
-		if tgCounter == tmplData.numOfTestsPerGroup {
-			tgCounter = 0
-			tgID++
+		if !tmplData.groupTestsByPackage {
+			tgCounter++
+			if tgCounter == tmplData.numOfTestsPerGroup {
+				tgCounter = 0
+				tgID++
+			}
 		}
 	}
 	tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed + tmplData.NumOfTestSkipped
