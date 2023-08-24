@@ -65,6 +65,7 @@ type (
 	testGroupData struct {
 		FailureIndicator string
 		SkippedIndicator string
+		Title            string
 		TestResults      []*testStatus
 	}
 
@@ -460,6 +461,9 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		if testFileInfo != nil {
 			status.TestFileName = testFileInfo.FileName
 			status.TestFunctionDetail = testFileInfo.TestFunctionFilePos
+		}
+		if tmplData.groupTestsByPackage {
+			tmplData.TestResults[tgID].Title = tgPackage
 		}
 		tmplData.TestResults[tgID].TestResults = append(tmplData.TestResults[tgID].TestResults, status)
 		if !status.Passed {
