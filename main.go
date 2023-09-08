@@ -442,6 +442,7 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	}
 	if tmplData.groupTestsByPackage {
 		sort.Sort(byPackage(tests))
+		sort.Stable(byName(tests))
 	} else {
 		sort.Sort(byName(tests))
 	}
