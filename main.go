@@ -38,6 +38,7 @@ type (
 		TestName           string
 		Package            string
 		ElapsedTime        float64
+		Order              int
 		Output             []string
 		Passed             bool
 		Skipped            bool
@@ -58,6 +59,7 @@ type (
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
 		groupTestsByPackage            bool
+		sortTestsByName                bool
 		OutputFilename                 string
 		TestExecutionDate              string
 	}
@@ -74,6 +76,7 @@ type (
 		sizeFlag     string
 		groupSize    int
 		groupPackage bool
+		nosortFlag   bool
 		listFlag     string
 		outputFlag   string
 		verbose      bool
@@ -128,6 +131,7 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			}
 			tmplData.numOfTestsPerGroup = flags.groupSize
 			tmplData.groupTestsByPackage = flags.groupPackage
+			tmplData.sortTestsByName = !flags.nosortFlag
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
 			if err := checkIfStdinIsPiped(); err != nil {
@@ -183,6 +187,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		},
 	}
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.PersistentFlags().BoolVarP(&flags.nosortFlag,
+		"no-sort",
+		"",
+		false,
+		"don't sort the packages by name in the list")
 	rootCmd.PersistentFlags().StringVarP(&flags.titleFlag,
 		"title",
 		"t",
@@ -227,6 +236,7 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 	allPackageNames = map[string]*types.Nil{}
 
 	// read from stdin and parse "go test" results
+	order := 0
 	for stdinScanner.Scan() {
 		lineInput := stdinScanner.Bytes()
 		if flags.verbose {
@@ -246,9 +256,11 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 				status = &testStatus{
 					TestName: goTestOutputRow.TestName,
 					Package:  goTestOutputRow.Package,
+					Order:    order,
 					Output:   []string{},
 				}
 				allTests[key] = status
+				order += 1
 			} else {
 				status = allTests[key]
 			}
@@ -386,6 +398,7 @@ type testRef struct {
 	key  string
 	pkg  string
 	name string
+	ord  int
 }
 type byPackage []testRef
 type byName []testRef
@@ -435,15 +448,20 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	tgCounter := 0
 	tgID := 0
 
-	// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
 	var tests []testRef
 	for test, status := range allTests {
-		tests = append(tests, testRef{test, status.Package, status.TestName})
+		tests = append(tests, testRef{test, status.Package, status.TestName, status.Order})
 	}
+	// sort the allTests map by input order
+	sort.Slice(tests, func(i, j int) bool {
+		return tests[i].ord < tests[j].ord
+	})
 	if tmplData.groupTestsByPackage {
-		sort.Sort(byPackage(tests))
-		sort.Stable(byName(tests))
-	} else {
+		sort.Stable(byPackage(tests))
+		if tmplData.sortTestsByName {
+			sort.Stable(byName(tests))
+		}
+	} else if tmplData.sortTestsByName {
 		sort.Sort(byName(tests))
 	}
 	for _, test := range tests {

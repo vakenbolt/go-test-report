@@ -248,6 +248,7 @@ func TestGenerateReport(t *testing.T) {
 		TestResultGroupIndicatorWidth:  "20px",
 		TestResultGroupIndicatorHeight: "16px",
 		ReportTitle:                    "test-title",
+		sortTestsByName:                true,
 		numOfTestsPerGroup:             2,
 		OutputFilename:                 "test-output-report.html",
 	}
