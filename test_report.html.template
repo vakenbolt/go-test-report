@@ -249,7 +249,7 @@
     <div class="cardContainer">
         <div id="testResults">
             {{range $k, $v := .TestResults}}
-                <div class="testResultGroup {{.FailureIndicator}} {{.SkippedIndicator}}" id="{{$k}}"></div>
+                <div class="testResultGroup {{.FailureIndicator}} {{.SkippedIndicator}}" id="{{$k}}"{{if $v.Title}} title="{{$v.Title}}"{{end}}></div>
             {{end}}
         </div>
     </div>
