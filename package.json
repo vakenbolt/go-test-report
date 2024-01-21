@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vakenbolt/go-test-report.git"
+    "url": "git+https://github.com/DarkDrim/go-test-report.git"
   },
   "author": "Samuel Agesilas",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/vakenbolt/go-test-report/issues"
+    "url": "https://github.com/DarkDrim/go-test-report/issues"
   },
-  "homepage": "https://github.com/vakenbolt/go-test-report#readme",
+  "homepage": "https://github.com/DarkDrim/go-test-report#readme",
   "devDependencies": {
     "jest": "^26.6.3"
   },

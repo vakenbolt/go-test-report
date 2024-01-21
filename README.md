@@ -8,11 +8,21 @@
 
 
 [![license: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://shields.io/)
-[![version: 0.9.3](https://img.shields.io/badge/version-0.9.3-default.svg)](https://shields.io/)
+[![version: 1.0.0](https://img.shields.io/badge/version-1.0.0-default.svg)](https://shields.io/)
 [![platforms: macos,linux,windows](https://img.shields.io/badge/platforms-macos%20|%20linux%20|%20windows-orange.svg)](https://shields.io/)
-[![goreportcard](https://goreportcard.com/badge/github.com/vakenbolt/go-test-report)](https://goreportcard.com/report/github.com/vakenbolt/go-test-report)
+[![goreportcard](https://goreportcard.com/badge/github.com/DarkDrim/go-test-report)](https://goreportcard.com/report/github.com/DarkDrim/go-test-report)
 
 `go-test-report` captures `go test` output and parses it into a _single_ self-contained HTML file. 
+
+## Main differences from the main library
+
+[This is a fork of the library](https://github.com/vakenbolt/go-test-report)
+
+The original version of the library has not been supported for more than three years.
+
+This version has some improvements:
+- support for the latest version of Golang
+- ability to split groups by package (instead of splitting by number of tests)
 
 ## Installation
 
@@ -22,7 +32,7 @@ Install the go binary using `go get`.
 
 
 ```shell
-$ go get -u github.com/vakenbolt/go-test-report/
+$ go get -u github.com/DarkDrim/go-test-report/
 ```
 
 ## Usage
@@ -181,10 +191,11 @@ $ gmake buildall
 [@afbjorklund](https://github.com/afbjorklund)
 [@quarckster](https://github.com/quarckster)
 [@vakenbolt](https://github.com/vakenbolt)
+[@DarkDrim](https://github.com/DarkDrim)
 
 
 ## Contribute & Support
 
 - Add a GitHub Star
-- Suggest [new features, ideas and optimizations](https://github.com/vakenbolt/go-test-report/issues)
-- [Report issues](https://github.com/vakenbolt/go-test-report/issues)
+- Suggest [new features, ideas and optimizations](https://github.com/DarkDrim/go-test-report/issues)
+- [Report issues](https://github.com/DarkDrim/go-test-report/issues)

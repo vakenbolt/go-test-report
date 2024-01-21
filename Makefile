@@ -7,6 +7,10 @@ LIN_DIR := release_builds/linux-amd64/
 MAC_DIR := release_builds/darwin-amd64/
 WIN_DIR := release_builds/windows-amd64/
 
+.PHONY: help
+help: ## List of available commands
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
 genbuild: gencode
 	go build
 
@@ -41,3 +45,7 @@ buildall: genbuild
 
 dockertest: genbuild
 	docker build . -t go-test-report-test-runner:$(VERSION)
+
+.PHONY: lint
+lint: ## Run linter (https://github.com/golangci/golangci-lint/releases)
+	docker run --rm -v $(PWD):/app -w /app golangci/golangci-lint:v1.55.2 golangci-lint run -v --timeout 3m

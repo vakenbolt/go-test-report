@@ -1,0 +1,64 @@
+name: releaser
+
+# used:
+# github-tag-bump - A Github Action to automatically bump and tag master, on merge, with the latest SemVer formatted version.
+# github action: https://github.com/marketplace/actions/github-tag-bump
+# source code: https://github.com/anothrNick/github-tag-action
+
+# go releaser - Release Go projects as fast and easily as possible.
+# website: https://goreleaser.com/
+# github action: https://github.com/marketplace/actions/goreleaser-action
+# source code: https://github.com/goreleaser/goreleaser-action
+# goreleaser: https://github.com/goreleaser/goreleaser
+
+# run only when CI pipeline finished
+on:
+  workflow_run:
+    workflows: [ "CI" ]
+    branches: [ master ]
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: "releaser"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@1.67.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GO_RELEASER_GITHUB_TOKEN }}
+          DEFAULT_BUMP: minor
+          WITH_V: true
+          RELEASE_BRANCHES: master
+          INITIAL_VERSION: 1.0.0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21.5
+
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GO_RELEASER_GITHUB_TOKEN }}

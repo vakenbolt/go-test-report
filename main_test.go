@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -22,7 +22,7 @@ func TestVersionCommand(t *testing.T) {
 	rootCmd.SetArgs([]string{"version"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Nil(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
+	output, readErr := io.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal(fmt.Sprintf("go-test-report v%s\n", version), string(output))
 }
@@ -35,7 +35,7 @@ func TestTitleFlag(t *testing.T) {
 	rootCmd.SetArgs([]string{"--title", "Sample Test Report"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Error(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
+	output, readErr := io.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal("Sample Test Report", tmplData.ReportTitle)
 	assertions.NotEmpty(output)
@@ -60,7 +60,7 @@ func TestSizeFlag(t *testing.T) {
 	rootCmd.SetArgs([]string{"--size", "24"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Error(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
+	output, readErr := io.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal("24", flags.sizeFlag)
 	assertions.Equal("24px", tmplData.TestResultGroupIndicatorWidth)
@@ -76,7 +76,7 @@ func TestSizeFlagWithFullDimensions(t *testing.T) {
 	rootCmd.SetArgs([]string{"--size", "24x16"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Error(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
+	output, readErr := io.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal("24x16", flags.sizeFlag)
 	assertions.Equal("24px", tmplData.TestResultGroupIndicatorWidth)
@@ -103,7 +103,7 @@ func TestGroupSizeFlag(t *testing.T) {
 	rootCmd.SetArgs([]string{"--groupSize", "32"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Error(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
+	output, readErr := io.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal(32, tmplData.numOfTestsPerGroup)
 	assertions.NotEmpty(output)
@@ -128,7 +128,7 @@ func TestGroupOutputFlag(t *testing.T) {
 	rootCmd.SetArgs([]string{"--output", "test_file.html"})
 	rootCmdErr := rootCmd.Execute()
 	assertions.Error(rootCmdErr)
-	output, readErr := ioutil.ReadAll(buffer)
+	output, readErr := io.ReadAll(buffer)
 	assertions.Nil(readErr)
 	assertions.Equal("test_file.html", tmplData.OutputFilename)
 	assertions.NotEmpty(output)
@@ -209,10 +209,10 @@ func TestGetAllDetails(t *testing.T) {
 	assertions := assert.New(t)
 	data := `{
 	"Dir": ".",
-	"ImportPath": "github.com/vakenbolt/go-test-report",
+	"ImportPath": "github.com/DarkDrim/go-test-report",
 	"Name": "main",
 	"Module": {
-		"Path": "github.com/vakenbolt/go-test-report",
+		"Path": "github.com/DarkDrim/go-test-report",
 		"Main": true,
 		"Dir": "."
 	},
@@ -223,7 +223,7 @@ func TestGetAllDetails(t *testing.T) {
 		"main_test.go"
 	]
 }`
-	tmpfile, err := ioutil.TempFile("", "*.json")
+	tmpfile, err := os.CreateTemp("", "*.json")
 	if err != nil {
 		t.Fatal(err)
 	}

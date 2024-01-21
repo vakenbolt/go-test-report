@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"os"
 )
 
@@ -12,8 +11,8 @@ var htmlTemplate []byte
 var jsCode []byte
 
 func init() {
-	htmlTemplate, _ = ioutil.ReadFile("../test_report.html.template")
-	jsCode, _ = ioutil.ReadFile("../test_report.js")
+	htmlTemplate, _ = os.ReadFile("../test_report.html.template")
+	jsCode, _ = os.ReadFile("../test_report.js")
 }
 
 func main() {
