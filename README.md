@@ -131,6 +131,11 @@ The default number of tests in a _test group_ can be changed using the `-g` or `
 $ go test -json | go-test-report -g 8
 ```
 
+To group the tests by their package instead of by count, use the `-p` or `--groupPackage` flag.
+
+```bash
+$ go test -json | go-test-report -p
+```
 
 
 Use the `-s` or `--size` flag to change the default size of the _group size indicator_. For example, the following command will set both the width and height of the size of the indicator to 48 pixels. 

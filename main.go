@@ -38,6 +38,7 @@ type (
 		TestName           string
 		Package            string
 		ElapsedTime        float64
+		Order              int
 		Output             []string
 		Passed             bool
 		Skipped            bool
@@ -57,6 +58,8 @@ type (
 		ReportTitle                    string
 		JsCode                         template.JS
 		numOfTestsPerGroup             int
+		groupTestsByPackage            bool
+		sortTestsByName                bool
 		OutputFilename                 string
 		TestExecutionDate              string
 	}
@@ -64,16 +67,19 @@ type (
 	testGroupData struct {
 		FailureIndicator string
 		SkippedIndicator string
+		Title            string
 		TestResults      []*testStatus
 	}
 
 	cmdFlags struct {
-		titleFlag  string
-		sizeFlag   string
-		groupSize  int
-		listFlag   string
-		outputFlag string
-		verbose    bool
+		titleFlag    string
+		sizeFlag     string
+		groupSize    int
+		groupPackage bool
+		nosortFlag   bool
+		listFlag     string
+		outputFlag   string
+		verbose      bool
 	}
 
 	goListJSONModule struct {
@@ -124,6 +130,8 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 				return err
 			}
 			tmplData.numOfTestsPerGroup = flags.groupSize
+			tmplData.groupTestsByPackage = flags.groupPackage
+			tmplData.sortTestsByName = !flags.nosortFlag
 			tmplData.ReportTitle = flags.titleFlag
 			tmplData.OutputFilename = flags.outputFlag
 			if err := checkIfStdinIsPiped(); err != nil {
@@ -182,6 +190,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		},
 	}
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.PersistentFlags().BoolVarP(&flags.nosortFlag,
+		"no-sort",
+		"",
+		false,
+		"don't sort the packages by name in the list")
 	rootCmd.PersistentFlags().StringVarP(&flags.titleFlag,
 		"title",
 		"t",
@@ -197,6 +210,11 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"g",
 		20,
 		"the number of tests per test group indicator")
+	rootCmd.PersistentFlags().BoolVarP(&flags.groupPackage,
+		"groupPackage",
+		"p",
+		false,
+		"group tests by package instead of by count")
 	rootCmd.PersistentFlags().StringVarP(&flags.listFlag,
 		"list",
 		"l",
@@ -221,6 +239,7 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 	allPackageNames = map[string]*types.Nil{}
 
 	// read from stdin and parse "go test" results
+	order := 0
 	for stdinScanner.Scan() {
 		lineInput := stdinScanner.Bytes()
 		if flags.verbose {
@@ -240,9 +259,11 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 				status = &testStatus{
 					TestName: goTestOutputRow.TestName,
 					Package:  goTestOutputRow.Package,
+					Order:    order,
 					Output:   []string{},
 				}
 				allTests[key] = status
+				order += 1
 			} else {
 				status = allTests[key]
 			}
@@ -267,6 +288,7 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 
 func getAllDetails(listFile string) (testFileDetailsByPackage, error) {
 	testFileDetailByPackage := testFileDetailsByPackage{}
+	// #nosec
 	f, err := os.Open(listFile)
 	defer func() {
 		_ = f.Close()
@@ -380,16 +402,34 @@ func getFileDetails(goListJSON *goListJSON) (testFileDetailsByTest, error) {
 
 type testRef struct {
 	key  string
+	pkg  string
 	name string
+	ord  int
 }
+
+type byPackage []testRef
 type byName []testRef
+
+func (t byPackage) Len() int {
+	return len(t)
+}
+
+func (t byPackage) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+
+func (t byPackage) Less(i, j int) bool {
+	return t[i].pkg < t[j].pkg
+}
 
 func (t byName) Len() int {
 	return len(t)
 }
+
 func (t byName) Swap(i, j int) {
 	t[i], t[j] = t[j], t[i]
 }
+
 func (t byName) Less(i, j int) bool {
 	return t[i].name < t[j].name
 }
@@ -414,18 +454,37 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 	tmplData.NumOfTestPassed = 0
 	tmplData.NumOfTestFailed = 0
 	tmplData.NumOfTestSkipped = 0
+	// #nosec
 	tmplData.JsCode = template.JS(testReportJsCodeStr)
+	tgPackage := ""
 	tgCounter := 0
 	tgID := 0
 
 	// sort the allTests map by test name (this will produce a consistent order when iterating through the map)
 	var tests []testRef
 	for test, status := range allTests {
-		tests = append(tests, testRef{test, status.TestName})
+		tests = append(tests, testRef{test, status.Package, status.TestName, status.Order})
 	}
-	sort.Sort(byName(tests))
+	// sort the allTests map by input order
+	sort.Slice(tests, func(i, j int) bool {
+		return tests[i].ord < tests[j].ord
+	})
+	if tmplData.groupTestsByPackage {
+		sort.Stable(byPackage(tests))
+		if tmplData.sortTestsByName {
+			sort.Stable(byName(tests))
+		}
+	} else if tmplData.sortTestsByName {
+		sort.Sort(byName(tests))
+	}
 	for _, test := range tests {
 		status := allTests[test.key]
+		if tmplData.groupTestsByPackage {
+			if tgPackage != "" && status.Package != tgPackage {
+				tgID++
+			}
+			tgPackage = status.Package
+		}
 		if len(tmplData.TestResults) == tgID {
 			tmplData.TestResults = append(tmplData.TestResults, &testGroupData{})
 		}
@@ -434,6 +493,9 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		if testFileInfo != nil {
 			status.TestFileName = testFileInfo.FileName
 			status.TestFunctionDetail = testFileInfo.TestFunctionFilePos
+		}
+		if tmplData.groupTestsByPackage {
+			tmplData.TestResults[tgID].Title = tgPackage
 		}
 		tmplData.TestResults[tgID].TestResults = append(tmplData.TestResults[tgID].TestResults, status)
 		if !status.Passed {
@@ -447,10 +509,12 @@ func generateReport(tmplData *templateData, allTests map[string]*testStatus, tes
 		} else {
 			tmplData.NumOfTestPassed++
 		}
-		tgCounter++
-		if tgCounter == tmplData.numOfTestsPerGroup {
-			tgCounter = 0
-			tgID++
+		if !tmplData.groupTestsByPackage {
+			tgCounter++
+			if tgCounter == tmplData.numOfTestsPerGroup {
+				tgCounter = 0
+				tgID++
+			}
 		}
 	}
 	tmplData.NumOfTests = tmplData.NumOfTestPassed + tmplData.NumOfTestFailed + tmplData.NumOfTestSkipped
