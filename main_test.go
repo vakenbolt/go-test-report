@@ -366,6 +366,41 @@ func TestSameTestName(t *testing.T) {
 	assertions.Len(allTests, 2)
 }
 
+func TestReadTestDataFromStdInIgnoresNonJSONOutputFromBuildFailures(t *testing.T) {
+	assertions := assert.New(t)
+	flags := &cmdFlags{}
+	// go test -json still prints plain text for a package that fails to
+	// compile (the failure happens before the JSON-wrapped test binary
+	// runs), interleaved with valid JSON for packages that did build.
+	data := `# reciprocalmixed/bad
+bad/bad_test.go:6:7: expected ';', found is
+FAIL	reciprocalmixed/bad [setup failed]
+{"Time":"2026-07-26T23:25:00.993853751Z","Action":"start","Package":"reciprocalmixed/good"}
+{"Time":"2026-07-26T23:25:00.995397996Z","Action":"run","Package":"reciprocalmixed/good","Test":"TestGoodOne"}
+{"Time":"2026-07-26T23:25:00.995448202Z","Action":"output","Package":"reciprocalmixed/good","Test":"TestGoodOne","Output":"=== RUN   TestGoodOne\n"}
+{"Time":"2026-07-26T23:25:00.995461484Z","Action":"output","Package":"reciprocalmixed/good","Test":"TestGoodOne","Output":"--- PASS: TestGoodOne (0.00s)\n"}
+{"Time":"2026-07-26T23:25:00.995465251Z","Action":"pass","Package":"reciprocalmixed/good","Test":"TestGoodOne","Elapsed":0}
+`
+	stdinScanner := bufio.NewScanner(strings.NewReader(data))
+	buffer := bytes.NewBufferString("")
+	cmd := &cobra.Command{}
+	cmd.SetOut(buffer)
+
+	allPackageNames, allTests, err := readTestDataFromStdIn(stdinScanner, flags, cmd)
+	assertions.Nil(err)
+	assertions.Len(allPackageNames, 1)
+	assertions.Contains(allPackageNames, "reciprocalmixed/good")
+	assertions.Len(allTests, 1)
+
+	val := allTests["reciprocalmixed/good.TestGoodOne"]
+	assertions.True(val.Passed)
+
+	output, readErr := ioutil.ReadAll(buffer)
+	assertions.Nil(readErr)
+	assertions.Contains(string(output), "ignored 3 line(s) of non-JSON output")
+	assertions.Contains(string(output), "FAIL\treciprocalmixed/bad [setup failed]")
+}
+
 func TestParseSizeFlagIfValueIsNotInteger(t *testing.T) {
 	assertions := assert.New(t)
 	tmplData := &templateData{}
