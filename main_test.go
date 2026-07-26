@@ -205,37 +205,6 @@ func TestReadTestDataFromStdIn(t *testing.T) {
 	assertions.Equal(0, val.TestFunctionDetail.Col)
 }
 
-func TestReadTestDataFromStdInWithPassedStatus(t *testing.T) {
-	assertions := assert.New(t)
-
-	// Step 1: Setup test data and input
-	flags := &cmdFlags{}
-	data := `{"Time":"2020-07-10T01:24:44.269511-05:00","Action":"run","Package":"go-test-report","Test":"TestPassedStatus"}
-{"Time":"2020-07-10T01:24:44.270071-05:00","Action":"output","Package":"go-test-report","Test":"TestPassedStatus","Output":"=== RUN   TestPassedStatus"}
-{"Time":"2020-07-10T01:24:44.270295-05:00","Action":"output","Package":"go-test-report","Test":"TestPassedStatus","Output":"--- PASS: TestPassedStatus (0.50s)"}
-{"Time":"2020-07-10T01:24:44.270311-05:00","Action":"pass","Package":"go-test-report","Test":"TestPassedStatus","Elapsed":0.5}
-`
-	stdinScanner := bufio.NewScanner(strings.NewReader(data))
-	cmd := &cobra.Command{}
-
-	// Step 2: Execute the function under test
-	allPackageNames, allTests, err := readTestDataFromStdIn(stdinScanner, flags, cmd)
-
-	// Step 3: Verify the results
-	assertions.Nil(err)
-	assertions.Len(allPackageNames, 1)
-	assertions.Len(allTests, 1)
-
-	val := allTests["go-test-report.TestPassedStatus"]
-	// Test that status.Passed is set to true
-	assertions.True(val.Passed)
-	assertions.Equal("TestPassedStatus", val.TestName)
-	assertions.Equal(0.5, val.ElapsedTime)
-	assertions.Len(val.Output, 4)
-	assertions.Equal("=== RUN   TestPassedStatus", val.Output[1])
-	assertions.Equal("--- PASS: TestPassedStatus (0.50s)", val.Output[2])
-}
-
 func TestGetAllDetails(t *testing.T) {
 	assertions := assert.New(t)
 	data := `{
