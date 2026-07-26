@@ -74,6 +74,7 @@ type (
 		listFlag   string
 		outputFlag string
 		verbose    bool
+		tagsFlag   string
 	}
 
 	goListJSONModule struct {
@@ -153,7 +154,7 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 			if flags.listFlag != "" {
 				testFileDetailByPackage, err = getAllDetails(flags.listFlag)
 			} else {
-				testFileDetailByPackage, err = getPackageDetails(allPackageNames)
+				testFileDetailByPackage, err = getPackageDetails(allPackageNames, flags.tagsFlag)
 			}
 			if err != nil {
 				return err
@@ -209,6 +210,12 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 		"v",
 		false,
 		"while processing, show the complete output from go test ")
+	rootCmd.PersistentFlags().StringVarP(&flags.tagsFlag,
+		"tags",
+		"a",
+		"",
+		"a comma-separated list of build tags to pass through to the internal 'go list' calls; "+
+			"should match the -tags value passed to 'go test' so packages built only under those tags can be found")
 
 	return rootCmd, tmplData, flags
 }
@@ -285,7 +292,7 @@ func getAllDetails(listFile string) (testFileDetailsByPackage, error) {
 	return testFileDetailByPackage, nil
 }
 
-func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsByPackage, error) {
+func getPackageDetails(allPackageNames map[string]*types.Nil, tags string) (testFileDetailsByPackage, error) {
 	var testFileDetailByPackage testFileDetailsByPackage
 	ctx := context.Background()
 	g, ctx := errgroup.WithContext(ctx)
@@ -293,7 +300,7 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsBy
 	for packageName := range allPackageNames {
 		name := packageName
 		g.Go(func() error {
-			testFileDetailsByTest, err := getTestDetails(name)
+			testFileDetailsByTest, err := getTestDetails(name, tags)
 			if err != nil {
 				return err
 			}
@@ -323,15 +330,24 @@ func getPackageDetails(allPackageNames map[string]*types.Nil) (testFileDetailsBy
 	return testFileDetailByPackage, nil
 }
 
-func getTestDetails(packageName string) (testFileDetailsByTest, error) {
-	var out bytes.Buffer
+func getTestDetails(packageName string, tags string) (testFileDetailsByTest, error) {
+	var out, stderr bytes.Buffer
 	var cmd *exec.Cmd
 	stringReader := strings.NewReader("")
-	cmd = exec.Command("go", "list", "-json", packageName)
+	args := []string{"list", "-json"}
+	if tags != "" {
+		args = append(args, "-tags", tags)
+	}
+	args = append(args, packageName)
+	cmd = exec.Command("go", args...)
 	cmd.Stdin = stringReader
 	cmd.Stdout = &out
+	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
+		if stderr.Len() > 0 {
+			return nil, fmt.Errorf("go list failed for package %q: %s", packageName, strings.TrimSpace(stderr.String()))
+		}
 		return nil, err
 	}
 	goListJSON := &goListJSON{}

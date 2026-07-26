@@ -242,6 +242,21 @@ func TestGetAllDetails(t *testing.T) {
 	assertions.Len(testFileDetailsByPackage, 1)
 }
 
+func TestGetTestDetailsFailsWithoutMatchingBuildTags(t *testing.T) {
+	assertions := assert.New(t)
+	_, err := getTestDetails("github.com/vakenbolt/go-test-report/internal/testdata/tagged", "")
+	assertions.Error(err)
+	assertions.Contains(err.Error(), "go list failed")
+	assertions.Contains(err.Error(), "build constraints exclude all Go files")
+}
+
+func TestGetTestDetailsSucceedsWithMatchingBuildTags(t *testing.T) {
+	assertions := assert.New(t)
+	testFileDetailsByTest, err := getTestDetails("github.com/vakenbolt/go-test-report/internal/testdata/tagged", "tagged_pkg_test")
+	assertions.NoError(err)
+	assertions.Contains(testFileDetailsByTest, "TestTagged")
+}
+
 func TestGenerateReport(t *testing.T) {
 	assertions := assert.New(t)
 	tmplData := &templateData{
