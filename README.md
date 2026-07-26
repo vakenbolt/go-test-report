@@ -93,8 +93,10 @@ Available Commands:
 Flags:
   -g, --groupSize int   the number of tests per test group indicator (default 20)
   -h, --help            help for go-test-report
+  -l, --list string     the JSON module list
   -o, --output string   the HTML output file (default "test_report.html")
   -s, --size string     the size (in pixels) of the clickable indicator for test result groups (default "24")
+  -a, --tags string     a comma-separated list of build tags to pass through to the internal 'go list' calls; should match the -tags value passed to 'go test' so packages built only under those tags can be found
   -t, --title string    the title text shown in the test report (default "go-test-report")
   -v, --verbose         while processing, show the complete output from go test
 
@@ -133,6 +135,12 @@ Additionally, _both_ the width and height of the _group size indicator_ can be s
 
 ```bash
 $ go test -json | go-test-report -g 32x16
+```
+
+If any packages are built using [build tags](https://pkg.go.dev/go/build#hdr-Build_Constraints), pass the same tags used with `go test` to `go-test-report` via the `-a` or `--tags` flag, otherwise `go-test-report` will fail to look up test details for those packages.
+
+```bash
+$ go test -tags=integration -json ./... | go-test-report -a integration
 ```
 
 ## Building from source
