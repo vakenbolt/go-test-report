@@ -216,6 +216,7 @@ func initRootCommand() (*cobra.Command, *templateData, *cmdFlags) {
 func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *cobra.Command) (allPackageNames map[string]*types.Nil, allTests map[string]*testStatus, e error) {
 	allTests = map[string]*testStatus{}
 	allPackageNames = map[string]*types.Nil{}
+	var nonJSONLines []string
 
 	// read from stdin and parse "go test" results
 	for stdinScanner.Scan() {
@@ -228,7 +229,12 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 		}
 		goTestOutputRow := &goTestOutputRow{}
 		if err := json.Unmarshal(lineInput, goTestOutputRow); err != nil {
-			return nil, nil, err
+			// go test -json still prints plain text (not JSON) for output that
+			// happens before the JSON-wrapped test binary runs, e.g. a package
+			// that fails to compile. Skip these lines instead of aborting the
+			// whole run, so packages that did build still get reported.
+			nonJSONLines = append(nonJSONLines, strings.TrimSpace(string(lineInput)))
+			continue
 		}
 		if goTestOutputRow.TestName != "" {
 			var status *testStatus
@@ -257,6 +263,14 @@ func readTestDataFromStdIn(stdinScanner *bufio.Scanner, flags *cmdFlags, cmd *co
 				goTestOutputRow.Output = strings.TrimSpace(goTestOutputRow.Output)
 			}
 			status.Output = append(status.Output, goTestOutputRow.Output)
+		}
+	}
+	if len(nonJSONLines) > 0 {
+		msg := fmt.Sprintf(
+			"[go-test-report] warning: ignored %d line(s) of non-JSON output, often caused by a package failing to build:\n%s\n",
+			len(nonJSONLines), strings.Join(nonJSONLines, "\n"))
+		if _, err := cmd.OutOrStdout().Write([]byte(msg)); err != nil {
+			return nil, nil, err
 		}
 	}
 	return allPackageNames, allTests, nil
